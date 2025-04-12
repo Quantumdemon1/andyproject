@@ -23,7 +23,7 @@ const SidebarContent = () => <div className="space-y-6">
     </Card>
     
     <Card className="bg-aura-charcoal border-white/10">
-      <CardHeader className="pb-3">
+      <CardHeader className="w-full bg-gradient-to-r from-aura-blue to-aura-purple hover:from-aura-purple hover:to-aura-blue transition-colors duration-300 text-white py-6">
         <CardTitle className="text-lg">SCHEDULED EVENTS</CardTitle>
       </CardHeader>
       <CardContent>
