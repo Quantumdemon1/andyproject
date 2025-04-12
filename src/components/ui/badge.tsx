@@ -19,6 +19,7 @@ const badgeVariants = cva(
         notification: "bg-gradient-to-r from-aura-blue to-aura-purple border-transparent text-white shadow-sm",
         verified: "bg-gradient-to-r from-aura-blue to-aura-purple border-transparent text-white shadow-sm",
         tier: "border-transparent bg-white/10 text-white shadow-sm",
+        category: "border-transparent bg-black/30 backdrop-blur-sm text-white shadow-sm hover:bg-black/40 cursor-pointer",
       },
     },
     defaultVariants: {
