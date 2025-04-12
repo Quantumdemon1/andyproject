@@ -13,6 +13,7 @@ export interface Message {
   status: 'sent' | 'delivered' | 'read';
   attachment_url?: string;
   isMe?: boolean; // Computed locally
+  updated_at: string;
 }
 
 export interface Conversation {
@@ -126,20 +127,27 @@ export function useMessaging() {
               .select(`
                 id,
                 user_id,
-                user_profiles!inner(username, avatar_url, is_online)
+                user_profiles(username, avatar_url, is_online)
               `)
               .eq('conversation_id', conv.id);
 
             if (participantsError) throw participantsError;
 
             // Format participants
-            const participants = participantsData.map(p => ({
-              id: p.id,
-              user_id: p.user_id,
-              username: p.user_profiles?.username,
-              avatar_url: p.user_profiles?.avatar_url,
-              is_online: p.user_profiles?.is_online
-            }));
+            const participants = participantsData.map(p => {
+              // Safely access nested properties
+              const userProfile = Array.isArray(p.user_profiles) 
+                ? p.user_profiles[0] 
+                : (p.user_profiles as any);
+                
+              return {
+                id: p.id,
+                user_id: p.user_id,
+                username: userProfile?.username,
+                avatar_url: userProfile?.avatar_url,
+                is_online: userProfile?.is_online || false
+              };
+            });
 
             // For direct messages, use the other user's profile for display
             let name = conv.name;
@@ -260,9 +268,11 @@ export function useMessaging() {
           });
         }
 
-        // Add isMe flag to messages
-        const formattedMessages = data.map(message => ({
+        // Add isMe flag to messages and ensure proper type casting
+        const formattedMessages: Message[] = data.map(message => ({
           ...message,
+          // Ensure status is one of the allowed values
+          status: (message.status as 'sent' | 'delivered' | 'read') || 'sent',
           isMe: message.sender_id === user.id
         }));
 
@@ -294,8 +304,10 @@ export function useMessaging() {
             // Add new message
             const newMessage = {
               ...payload.new,
+              // Ensure proper typing
+              status: (payload.new.status as 'sent' | 'delivered' | 'read') || 'sent',
               isMe: payload.new.sender_id === user.id
-            };
+            } as Message;
 
             // Mark message as delivered if it's from someone else
             if (payload.new.sender_id !== user.id && payload.new.status === 'sent') {
@@ -319,7 +331,11 @@ export function useMessaging() {
             setMessages(prev => 
               prev.map(msg => 
                 msg.id === payload.new.id 
-                  ? { ...payload.new, isMe: payload.new.sender_id === user.id }
+                  ? { 
+                      ...payload.new, 
+                      status: (payload.new.status as 'sent' | 'delivered' | 'read') || 'sent',
+                      isMe: payload.new.sender_id === user.id 
+                    } as Message
                   : msg
               )
             );
