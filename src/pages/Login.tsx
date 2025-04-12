@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from "@/component
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+
 const loginSchema = z.object({
   email: z.string().email({
     message: "Please enter a valid email address"
@@ -20,6 +22,7 @@ const loginSchema = z.object({
     message: "Password must be at least 6 characters"
   })
 });
+
 const signupSchema = z.object({
   email: z.string().email({
     message: "Please enter a valid email address"
@@ -31,26 +34,25 @@ const signupSchema = z.object({
     message: "Username must be at least 3 characters"
   })
 });
+
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showSignupPassword, setShowSignupPassword] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const {
-    signIn,
-    signUp,
-    user
-  } = useAuth();
+  const [testAccountLoading, setTestAccountLoading] = useState<'admin' | 'user' | null>(null);
+  
+  const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
+
   useEffect(() => {
     if (user) {
       navigate("/home");
     }
   }, [user, navigate]);
+
   const loginForm = useForm({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -58,6 +60,7 @@ const Login = () => {
       password: ""
     }
   });
+
   const signupForm = useForm({
     resolver: zodResolver(signupSchema),
     defaultValues: {
@@ -66,13 +69,14 @@ const Login = () => {
       username: ""
     }
   });
+
   const handleLogin = async (data: z.infer<typeof loginSchema>) => {
     setIsSubmitting(true);
     setErrorMessage(null);
+    
     try {
-      const {
-        error
-      } = await signIn(data.email, data.password);
+      const { error } = await signIn(data.email, data.password);
+      
       if (error) {
         setErrorMessage(error.message);
         return;
@@ -84,13 +88,14 @@ const Login = () => {
       setIsSubmitting(false);
     }
   };
+
   const handleSignup = async (data: z.infer<typeof signupSchema>) => {
     setIsSubmitting(true);
     setErrorMessage(null);
+    
     try {
-      const {
-        error
-      } = await signUp(data.email, data.password, data.username);
+      const { error } = await signUp(data.email, data.password, data.username);
+      
       if (error) {
         setErrorMessage(error.message);
         return;
@@ -99,36 +104,50 @@ const Login = () => {
       // Automatically switch to login tab after successful signup
       setActiveTab("login");
       loginForm.setValue("email", data.email);
+      toast({
+        title: "Account created successfully",
+        description: "You can now log in with your credentials",
+      });
     } catch (error: any) {
       setErrorMessage(error.message || "An unexpected error occurred");
     } finally {
       setIsSubmitting(false);
     }
   };
+
   const handleTestLogin = async (role: 'admin' | 'user') => {
-    setIsSubmitting(true);
     setErrorMessage(null);
+    setTestAccountLoading(role);
+    
     try {
       const email = role === 'admin' ? 'admin@example.com' : 'user@example.com';
       const password = 'password123';
-      const {
-        error
-      } = await signIn(email, password);
+      
+      const { error } = await signIn(email, password);
+      
       if (error) {
         toast({
-          title: "Test login failed",
-          description: `${role} account may not exist yet. Please create it first.`,
+          title: "Login failed",
+          description: error.message,
           variant: "destructive"
         });
-        setErrorMessage(`${role} account may not exist yet. Please create it first.`);
+        setErrorMessage(error.message);
+      } else {
+        toast({
+          title: "Welcome!",
+          description: `You're now logged in as ${role}`,
+        });
+        // The auth state change will trigger navigation
       }
     } catch (error: any) {
       setErrorMessage(error.message || "An unexpected error occurred");
     } finally {
-      setIsSubmitting(false);
+      setTestAccountLoading(null);
     }
   };
-  return <div className="flex min-h-screen bg-aura-darkPurple">
+
+  return (
+    <div className="flex min-h-screen bg-aura-darkPurple">
       <div className="hidden lg:flex lg:flex-1 bg-aura-blue relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-radial from-aura-blue/80 to-purple-800/90"></div>
         
@@ -144,9 +163,11 @@ const Login = () => {
       
       <div className="w-full lg:w-1/2 p-6 sm:p-10 flex items-center justify-center">
         <div className="w-full max-w-md space-y-6">
-          {errorMessage && <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-md text-sm">
+          {errorMessage && (
+            <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-md text-sm">
               {errorMessage}
-            </div>}
+            </div>
+          )}
           
           <Tabs defaultValue="login" value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-8">
@@ -157,32 +178,54 @@ const Login = () => {
             <TabsContent value="login" className="space-y-4">
               <Form {...loginForm}>
                 <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
-                  <FormField control={loginForm.control} name="email" render={({
-                  field
-                }) => <FormItem>
+                  <FormField 
+                    control={loginForm.control} 
+                    name="email" 
+                    render={({ field }) => (
+                      <FormItem>
                         <div className="relative">
                           <Mail className="absolute left-3 top-3 text-gray-400" size={18} />
                           <FormControl>
-                            <Input {...field} type="email" placeholder="Email" className="h-12 bg-white/5 border-white/10 pl-10" />
+                            <Input 
+                              {...field} 
+                              type="email" 
+                              placeholder="Email" 
+                              className="h-12 bg-white/5 border-white/10 pl-10" 
+                            />
                           </FormControl>
                         </div>
                         <FormMessage />
-                      </FormItem>} />
+                      </FormItem>
+                    )} 
+                  />
                   
-                  <FormField control={loginForm.control} name="password" render={({
-                  field
-                }) => <FormItem>
+                  <FormField 
+                    control={loginForm.control} 
+                    name="password" 
+                    render={({ field }) => (
+                      <FormItem>
                         <div className="relative">
                           <Lock className="absolute left-3 top-3 text-gray-400" size={18} />
                           <FormControl>
-                            <Input {...field} type={showPassword ? "text" : "password"} placeholder="Password" className="h-12 bg-white/5 border-white/10 pl-10 pr-10" />
+                            <Input 
+                              {...field} 
+                              type={showPassword ? "text" : "password"} 
+                              placeholder="Password" 
+                              className="h-12 bg-white/5 border-white/10 pl-10 pr-10" 
+                            />
                           </FormControl>
-                          <button type="button" className="absolute right-3 top-3 text-gray-400" onClick={() => setShowPassword(!showPassword)}>
+                          <button 
+                            type="button" 
+                            className="absolute right-3 top-3 text-gray-400" 
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
                             {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                           </button>
                         </div>
                         <FormMessage />
-                      </FormItem>} />
+                      </FormItem>
+                    )} 
+                  />
                   
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
@@ -194,7 +237,12 @@ const Login = () => {
                     </Link>
                   </div>
                   
-                  <Button type="submit" variant="gradient" className="w-full h-12 btn-pulse" disabled={isSubmitting}>
+                  <Button 
+                    type="submit" 
+                    variant="gradient" 
+                    className="w-full h-12 btn-pulse" 
+                    disabled={isSubmitting}
+                  >
                     {isSubmitting ? "Signing In..." : "LOG IN"}
                   </Button>
                 </form>
@@ -210,11 +258,37 @@ const Login = () => {
               </div>
               
               <div className="flex flex-col gap-3 mt-6">
-                <Button variant="outline" onClick={() => handleTestLogin('admin')} type="button" className="w-full h-12 btn-pulse text-zinc-950">
-                  Login as Admin
+                <Button 
+                  variant="outline" 
+                  onClick={() => handleTestLogin('admin')} 
+                  type="button" 
+                  className="w-full h-12 btn-pulse relative"
+                  disabled={!!testAccountLoading}
+                >
+                  {testAccountLoading === 'admin' ? (
+                    <span className="flex items-center">
+                      <span className="h-4 w-4 mr-2 rounded-full border-2 border-t-transparent border-white animate-spin"></span>
+                      Logging in...
+                    </span>
+                  ) : (
+                    "Login as Admin"
+                  )}
                 </Button>
-                <Button variant="outline" onClick={() => handleTestLogin('user')} type="button" className="w-full h-12 btn-pulse text-zinc-950">
-                  Login as User
+                <Button 
+                  variant="outline" 
+                  onClick={() => handleTestLogin('user')} 
+                  type="button" 
+                  className="w-full h-12 btn-pulse relative"
+                  disabled={!!testAccountLoading}
+                >
+                  {testAccountLoading === 'user' ? (
+                    <span className="flex items-center">
+                      <span className="h-4 w-4 mr-2 rounded-full border-2 border-t-transparent border-white animate-spin"></span>
+                      Logging in...
+                    </span>
+                  ) : (
+                    "Login as User"
+                  )}
                 </Button>
               </div>
             </TabsContent>
@@ -222,58 +296,93 @@ const Login = () => {
             <TabsContent value="signup" className="space-y-4">
               <Form {...signupForm}>
                 <form onSubmit={signupForm.handleSubmit(handleSignup)} className="space-y-4">
-                  <FormField control={signupForm.control} name="username" render={({
-                  field
-                }) => <FormItem>
+                  <FormField 
+                    control={signupForm.control} 
+                    name="username" 
+                    render={({ field }) => (
+                      <FormItem>
                         <div className="relative">
                           <User className="absolute left-3 top-3 text-gray-400" size={18} />
                           <FormControl>
-                            <Input {...field} placeholder="Username" className="h-12 bg-white/5 border-white/10 pl-10" />
+                            <Input 
+                              {...field} 
+                              placeholder="Username" 
+                              className="h-12 bg-white/5 border-white/10 pl-10" 
+                            />
                           </FormControl>
                         </div>
                         <FormMessage />
-                      </FormItem>} />
+                      </FormItem>
+                    )} 
+                  />
                   
-                  <FormField control={signupForm.control} name="email" render={({
-                  field
-                }) => <FormItem>
+                  <FormField 
+                    control={signupForm.control} 
+                    name="email" 
+                    render={({ field }) => (
+                      <FormItem>
                         <div className="relative">
                           <Mail className="absolute left-3 top-3 text-gray-400" size={18} />
                           <FormControl>
-                            <Input {...field} type="email" placeholder="Email" className="h-12 bg-white/5 border-white/10 pl-10" />
+                            <Input 
+                              {...field} 
+                              type="email" 
+                              placeholder="Email" 
+                              className="h-12 bg-white/5 border-white/10 pl-10" 
+                            />
                           </FormControl>
                         </div>
                         <FormMessage />
-                      </FormItem>} />
+                      </FormItem>
+                    )} 
+                  />
                   
-                  <FormField control={signupForm.control} name="password" render={({
-                  field
-                }) => <FormItem>
+                  <FormField 
+                    control={signupForm.control} 
+                    name="password" 
+                    render={({ field }) => (
+                      <FormItem>
                         <div className="relative">
                           <Lock className="absolute left-3 top-3 text-gray-400" size={18} />
                           <FormControl>
-                            <Input {...field} type={showSignupPassword ? "text" : "password"} placeholder="Password" className="h-12 bg-white/5 border-white/10 pl-10 pr-10" />
+                            <Input 
+                              {...field} 
+                              type={showSignupPassword ? "text" : "password"} 
+                              placeholder="Password" 
+                              className="h-12 bg-white/5 border-white/10 pl-10 pr-10" 
+                            />
                           </FormControl>
-                          <button type="button" className="absolute right-3 top-3 text-gray-400" onClick={() => setShowSignupPassword(!showSignupPassword)}>
+                          <button 
+                            type="button" 
+                            className="absolute right-3 top-3 text-gray-400" 
+                            onClick={() => setShowSignupPassword(!showSignupPassword)}
+                          >
                             {showSignupPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                           </button>
                         </div>
                         <FormMessage />
-                      </FormItem>} />
+                      </FormItem>
+                    )} 
+                  />
                   
                   <div className="text-sm text-gray-400">
                     By signing up, you agree to our <Link to="/terms" className="text-aura-blue hover:underline">Terms of Service</Link> and <Link to="/privacy" className="text-aura-blue hover:underline">Privacy Policy</Link>,
                     and confirm that you are at least 18 years old.
                   </div>
                   
-                  <Button type="submit" variant="gradient" className="w-full h-12 btn-pulse" disabled={isSubmitting}>
+                  <Button 
+                    type="submit" 
+                    variant="gradient" 
+                    className="w-full h-12 btn-pulse" 
+                    disabled={isSubmitting}
+                  >
                     {isSubmitting ? "Signing Up..." : "SIGN UP"}
                   </Button>
                 </form>
               </Form>
               
               <div className="pt-4 text-center text-sm text-gray-400">
-                <p>For testing purposes, you can create these accounts:</p>
+                <p>For testing purposes, you can use these accounts:</p>
                 <div className="mt-2 p-3 bg-aura-charcoal/50 rounded-md">
                   <p className="mb-1"><span className="text-aura-blue">Admin:</span> admin@example.com / password123</p>
                   <p><span className="text-aura-blue">User:</span> user@example.com / password123</p>
@@ -283,6 +392,8 @@ const Login = () => {
           </Tabs>
         </div>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default Login;

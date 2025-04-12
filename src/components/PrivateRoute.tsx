@@ -28,7 +28,7 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children, requiredRole }) =
   // Check role requirements if specified
   if (requiredRole && userRole !== requiredRole) {
     // If admin role is required but user isn't admin, redirect to home
-    if (requiredRole === 'admin' && userRole !== 'admin') {
+    if (requiredRole === 'admin') {
       return <Navigate to="/home" replace />;
     }
   }

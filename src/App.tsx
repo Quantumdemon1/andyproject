@@ -46,7 +46,13 @@ const App = () => (
             <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
             <Route path="/discover" element={<PrivateRoute><Discover /></PrivateRoute>} />
             <Route path="/more" element={<PrivateRoute><More /></PrivateRoute>} />
-            <Route path="/admin" element={<PrivateRoute><AdminPanel /></PrivateRoute>} />
+            
+            {/* Admin-only routes */}
+            <Route path="/admin" element={
+              <PrivateRoute requiredRole="admin"><AdminPanel /></PrivateRoute>
+            } />
+            
+            {/* Creator routes */}
             <Route path="/creator" element={<PrivateRoute><CreatorDashboard /></PrivateRoute>} />
 
             {/* Catch-all route */}
