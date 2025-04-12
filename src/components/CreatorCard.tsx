@@ -74,8 +74,8 @@ const CreatorCard: React.FC<CreatorCardProps> = ({
   
   return (
     <div className="rounded-xl overflow-hidden bg-aura-charcoal border border-white/10 transition-all hover:-translate-y-1 hover:shadow-lg hover:shadow-aura-purple/20">
-      {/* Header image with gradient overlay */}
-      <div className="h-32 bg-gradient-to-br from-aura-blue to-aura-purple relative">
+      {/* Header image with gradient overlay - height reduced from h-32 to h-24 */}
+      <div className="h-24 bg-gradient-to-br from-aura-blue to-aura-purple relative">
         {/* Overlay gradient for better text readability */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
         
