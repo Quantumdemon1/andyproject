@@ -108,7 +108,6 @@ const Collections = () => {
             defaultValue="my-collections" 
             value={activeTab}
             onValueChange={setActiveTab}
-            className="w-full"
           >
             <TabsList className="bg-white/5 w-fit">
               <TabsTrigger value="my-collections" className="data-[state=active]:bg-aura-blue">
@@ -118,48 +117,46 @@ const Collections = () => {
                 Saved
               </TabsTrigger>
             </TabsList>
+            
+            <TabsContent value="my-collections" className="mt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="flex items-center justify-center bg-white/5 border border-white/10 border-dashed rounded-lg h-64 cursor-pointer hover:bg-white/10 transition-colors">
+                  <div className="text-center">
+                    <Folder size={48} className="mx-auto mb-3 text-aura-blue" />
+                    <p className="text-lg font-medium">Create Collection</p>
+                    <p className="text-sm text-gray-400 mt-1">Organize your content</p>
+                  </div>
+                </div>
+                
+                {myCollections.map(collection => (
+                  <CollectionCard key={collection.id} collection={collection} />
+                ))}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="saved" className="mt-6">
+              {savedCollections.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {savedCollections.map(collection => (
+                    <CollectionCard key={collection.id} collection={collection} isSaved={true} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-20">
+                  <div className="glass-morphism inline-flex p-6 rounded-full mb-4">
+                    <Folder size={48} className="text-gray-400" />
+                  </div>
+                  <h3 className="text-xl font-medium mb-2">No saved collections</h3>
+                  <p className="text-gray-400">Discover creators and save their collections</p>
+                </div>
+              )}
+            </TabsContent>
           </Tabs>
           
           <Button className="bg-aura-blue hover:bg-aura-blue/80 text-white">
             <PlusCircle size={18} className="mr-2" />
             New Collection
           </Button>
-        </div>
-        
-        <div>
-          <TabsContent value="my-collections" className="mt-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="flex items-center justify-center bg-white/5 border border-white/10 border-dashed rounded-lg h-64 cursor-pointer hover:bg-white/10 transition-colors">
-                <div className="text-center">
-                  <Folder size={48} className="mx-auto mb-3 text-aura-blue" />
-                  <p className="text-lg font-medium">Create Collection</p>
-                  <p className="text-sm text-gray-400 mt-1">Organize your content</p>
-                </div>
-              </div>
-              
-              {myCollections.map(collection => (
-                <CollectionCard key={collection.id} collection={collection} />
-              ))}
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="saved" className="mt-0">
-            {savedCollections.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {savedCollections.map(collection => (
-                  <CollectionCard key={collection.id} collection={collection} isSaved={true} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-20">
-                <div className="glass-morphism inline-flex p-6 rounded-full mb-4">
-                  <Folder size={48} className="text-gray-400" />
-                </div>
-                <h3 className="text-xl font-medium mb-2">No saved collections</h3>
-                <p className="text-gray-400">Discover creators and save their collections</p>
-              </div>
-            )}
-          </TabsContent>
         </div>
       </div>
     </MainLayout>
