@@ -95,75 +95,76 @@ const CreatorCard: React.FC<CreatorCardProps> = ({
         >
           <Heart className={`h-4 w-4 ${liked ? 'text-pink-500 fill-pink-500' : 'text-white'}`} />
         </button>
+
+        {/* Profile image positioned on the header */}
+        <Avatar className="absolute -bottom-6 left-5 h-16 w-16 border-2 border-aura-charcoal ring-2 ring-white/10">
+          <AvatarImage src={imageUrl} alt={name} />
+          <AvatarFallback className="bg-gradient-to-br from-aura-blue to-aura-purple text-white">
+            {getInitials(name)}
+          </AvatarFallback>
+        </Avatar>
       </div>
       
-      <div className="p-5 pb-4 relative">
-        {/* Profile image - moved to align better with content */}
-        <div className="flex items-start mb-4">
-          <Avatar className="h-14 w-14 border-2 border-aura-charcoal ring-2 ring-white/10 mr-3">
-            <AvatarImage src={imageUrl} alt={name} />
-            <AvatarFallback className="bg-gradient-to-br from-aura-blue to-aura-purple text-white">
-              {getInitials(name)}
-            </AvatarFallback>
-          </Avatar>
-          
-          <div className="flex-1">
-            <div className="flex items-center gap-1">
-              <h3 className="font-semibold text-base">{name}</h3>
+      <div className="p-4 pt-8 relative">
+        {/* Content section with improved padding for avatar overlap */}
+        <div className="mb-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <h3 className="font-semibold text-base truncate max-w-[200px]">{name}</h3>
               {isVerified && (
-                <BadgeCheck className="h-4 w-4 text-aura-blue" />
+                <BadgeCheck className="h-4 w-4 text-aura-blue flex-shrink-0" />
               )}
             </div>
             
-            <div className="flex items-center text-gray-400 text-sm">
-              @{username}
-              {tier && (
-                <Badge variant="tier" className="text-xs ml-1.5 py-0 h-5 bg-white/10">
-                  {tier}
-                </Badge>
+            <Button 
+              variant={subscribed ? "secondary" : "default"}
+              size="sm"
+              className={`flex items-center gap-1 h-8 ${
+                subscribed 
+                  ? "bg-white/10 hover:bg-white/20" 
+                  : "bg-gradient-to-r from-aura-blue to-aura-purple hover:from-aura-purple hover:to-aura-blue"
+              }`}
+              onClick={handleSubscribe}
+            >
+              {subscribed ? (
+                <>
+                  <Check size={14} /> Subscribed
+                </>
+              ) : (
+                <>
+                  {price ? (
+                    <>
+                      <DollarSign size={14} /> {price}
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus size={14} /> Follow
+                    </>
+                  )}
+                </>
               )}
-            </div>
+            </Button>
           </div>
           
-          <Button 
-            variant={subscribed ? "secondary" : "default"}
-            size="sm"
-            className={`flex items-center gap-1 h-8 ${
-              subscribed 
-                ? "bg-white/10 hover:bg-white/20" 
-                : "bg-gradient-to-r from-aura-blue to-aura-purple hover:from-aura-purple hover:to-aura-blue"
-            }`}
-            onClick={handleSubscribe}
-          >
-            {subscribed ? (
-              <>
-                <Check size={14} /> Subscribed
-              </>
-            ) : (
-              <>
-                {price ? (
-                  <>
-                    <DollarSign size={14} /> {price}
-                  </>
-                ) : (
-                  <>
-                    <UserPlus size={14} /> Follow
-                  </>
-                )}
-              </>
+          <div className="text-gray-400 text-sm flex items-center gap-1.5">
+            <span className="truncate max-w-[120px]">@{username}</span>
+            {tier && (
+              <Badge variant="tier" className="text-xs py-0 h-5 bg-white/10">
+                {tier}
+              </Badge>
             )}
-          </Button>
+          </div>
         </div>
         
-        <p className="text-sm text-gray-300 line-clamp-2 mb-3">{description}</p>
+        <p className="text-sm text-gray-300 line-clamp-2 mb-3 mt-2">{description}</p>
         
         <div className="flex items-center justify-between pt-3 border-t border-white/5">
-          <div className="flex items-center gap-1">
-            <UserPlus className="h-3.5 w-3.5 text-gray-400" />
-            <span className="text-xs text-gray-400">{followers.toLocaleString()}</span>
+          <div className="flex items-center gap-1.5">
+            <User className="h-3.5 w-3.5 text-gray-400" />
+            <span className="text-xs text-gray-400">{followers.toLocaleString()} followers</span>
           </div>
           {rating > 0 && (
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               <Star className="h-3.5 w-3.5 text-yellow-500 fill-yellow-500" />
               <span className="text-xs text-gray-400">{rating.toFixed(1)}</span>
             </div>
