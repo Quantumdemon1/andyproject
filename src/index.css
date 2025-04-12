@@ -60,4 +60,24 @@
   .sidebar-active {
     @apply relative text-white before:absolute before:left-0 before:w-1 before:h-full before:bg-aura-blue;
   }
+
+  .btn-gradient {
+    @apply bg-gradient-to-r from-aura-charcoal to-aura-purple hover:from-aura-darkPurple hover:to-aura-blue shadow-md hover:shadow-lg transition-all duration-300;
+  }
+  
+  .notification-gradient {
+    @apply bg-gradient-to-r from-aura-charcoal to-aura-blue shadow-sm;
+  }
+  
+  .btn-pulse {
+    @apply relative overflow-hidden;
+  }
+  
+  .btn-pulse::after {
+    @apply content-[''] absolute top-0 left-0 right-0 bottom-0 bg-white/20 transform scale-x-0 origin-right transition-transform duration-500 ease-out;
+  }
+  
+  .btn-pulse:hover::after {
+    @apply transform scale-x-100 origin-left;
+  }
 }

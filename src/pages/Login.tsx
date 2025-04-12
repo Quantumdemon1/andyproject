@@ -56,7 +56,7 @@ const Login = () => {
               </button>
             </div>
             
-            <Button className="w-full h-12 bg-aura-blue hover:bg-aura-blue/80 text-white">
+            <Button variant="gradient" className="w-full h-12 btn-pulse">
               LOG IN
             </Button>
           </div>

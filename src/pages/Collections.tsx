@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import MainLayout from "@/components/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,6 @@ import { PlusCircle, Folder, Image, Video, FileText, MoreHorizontal } from "luci
 const Collections = () => {
   const [activeTab, setActiveTab] = useState("my-collections");
   
-  // Mock collections data
   const myCollections = [
     {
       id: "1",
@@ -81,7 +79,7 @@ const Collections = () => {
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent">
             <div className="absolute bottom-3 left-3 flex items-center gap-2 text-sm">
               {getTypeIcon(collection.type)}
-              <span>{collection.itemCount} items</span>
+              <span className="notification-gradient rounded-full px-2 py-0.5">{collection.itemCount} items</span>
             </div>
           </div>
         </div>
@@ -153,7 +151,7 @@ const Collections = () => {
             </TabsContent>
           </Tabs>
           
-          <Button className="bg-aura-blue hover:bg-aura-blue/80 text-white">
+          <Button variant="gradient" className="btn-pulse">
             <PlusCircle size={18} className="mr-2" />
             New Collection
           </Button>

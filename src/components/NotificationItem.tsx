@@ -30,17 +30,17 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
   const getTypeColor = (type: NotificationType) => {
     switch (type) {
       case 'subscription':
-        return "bg-aura-blue";
+        return "bg-gradient-to-r from-aura-charcoal to-aura-blue";
       case 'tip':
-        return "bg-green-500";
+        return "bg-gradient-to-r from-aura-charcoal to-green-500";
       case 'comment':
-        return "bg-yellow-500";
+        return "bg-gradient-to-r from-aura-charcoal to-yellow-500";
       case 'like':
-        return "bg-pink-500";
+        return "bg-gradient-to-r from-aura-charcoal to-pink-500";
       case 'mention':
-        return "bg-purple-500";
+        return "bg-gradient-to-r from-aura-charcoal to-aura-purple";
       default:
-        return "bg-gray-500";
+        return "bg-gradient-to-r from-aura-charcoal to-gray-500";
     }
   };
   
@@ -57,7 +57,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
           style={{ backgroundImage: `url(${avatarUrl})` }}
         />
         <div className="absolute bottom-0 right-0">
-          <div className={`h-3 w-3 rounded-full ${typeColor} border-2 border-aura-charcoal`}></div>
+          <div className={`h-3 w-3 rounded-full ${typeColor} border-2 border-aura-charcoal shadow-sm`}></div>
         </div>
       </div>
       

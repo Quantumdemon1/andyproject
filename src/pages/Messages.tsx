@@ -79,18 +79,18 @@ const Messages = () => {
               {tabs.map(tab => (
                 <Button
                   key={tab.id}
-                  variant="ghost"
+                  variant={activeTab === tab.id ? "gradient" : "ghost"}
                   size="sm"
                   className={`rounded-full flex items-center whitespace-nowrap ${
                     activeTab === tab.id 
-                      ? "bg-aura-blue text-white" 
+                      ? "" 
                       : "bg-white/5 text-gray-300 hover:bg-white/10"
                   }`}
                   onClick={() => setActiveTab(tab.id)}
                 >
                   {tab.label}
                   {tab.count && (
-                    <span className="ml-1 bg-white/20 text-white text-xs rounded-full px-1.5 py-0.5">
+                    <span className={`ml-1 ${activeTab === tab.id ? 'bg-white/20' : 'notification-gradient'} text-white text-xs rounded-full px-1.5 py-0.5`}>
                       {tab.count}
                     </span>
                   )}
@@ -120,7 +120,7 @@ const Messages = () => {
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
               <h2 className="text-2xl font-semibold mb-4">Select any Conversation or send a New Message</h2>
-              <Button size="lg" className="bg-aura-blue hover:bg-aura-blue/80 text-white px-8 py-6">
+              <Button variant="gradient" size="lg" className="btn-pulse px-8 py-6">
                 NEW MESSAGE
               </Button>
             </div>

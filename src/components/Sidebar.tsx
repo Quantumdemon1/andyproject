@@ -41,7 +41,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePath }) => {
               <item.icon size={20} />
               <span>{item.label}</span>
               {item.badge && (
-                <span className="ml-auto bg-aura-blue text-white text-xs px-1.5 py-0.5 rounded-full">
+                <span className="ml-auto notification-gradient text-white text-xs px-1.5 py-0.5 rounded-full">
                   {item.badge}
                 </span>
               )}
@@ -51,7 +51,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePath }) => {
       </div>
       
       <div className="mt-auto p-4">
-        <Button className="w-full bg-aura-blue hover:bg-aura-blue/80 text-white flex items-center gap-2">
+        <Button variant="gradient" className="w-full btn-pulse text-white flex items-center gap-2">
           <PlusCircle size={18} />
           NEW POST
         </Button>
