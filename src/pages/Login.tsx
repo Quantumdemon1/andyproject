@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { z } from "zod"; // Added this import
+import { z } from "zod";
 import LoginForm, { loginSchema } from "@/components/auth/LoginForm";
 import SignupForm, { signupSchema } from "@/components/auth/SignupForm";
 import TestLoginButtons from "@/components/auth/TestLoginButtons";
@@ -19,6 +19,7 @@ const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Redirect if user is already logged in
   useEffect(() => {
     if (user) {
       navigate("/home");
@@ -79,21 +80,12 @@ const Login = () => {
       const { error } = await signIn(email, password);
       
       if (error) {
-        toast({
-          title: "Login failed",
-          description: error.message,
-          variant: "destructive"
-        });
-        setErrorMessage(error.message);
-      } else {
-        toast({
-          title: "Welcome!",
-          description: `You're now logged in as ${role}`,
-        });
-        // The auth state change will trigger navigation
+        throw new Error(error.message);
       }
+      
+      // Success toast is handled in useEffect when redirect happens
     } catch (error: any) {
-      setErrorMessage(error.message || "An unexpected error occurred");
+      throw error; // Let the TestLoginButtons component handle the error
     }
   };
 

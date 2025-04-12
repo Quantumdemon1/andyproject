@@ -19,12 +19,8 @@ const TestLoginButtons: React.FC<TestLoginButtonsProps> = ({
       setTestAccountLoading(role);
       await onTestLogin(role);
       
-      // Successfully logged in
-      toast({
-        title: "Login successful",
-        description: `You are now logged in as ${role}`,
-        variant: "default"
-      });
+      // Don't show success toast here - let the parent component handle it
+      // after successful authentication
     } catch (error) {
       console.error("Test login error:", error);
       
