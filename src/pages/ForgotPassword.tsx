@@ -5,30 +5,41 @@ import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import { Mail } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setErrorMessage(null);
     
     try {
-      // TODO: Implement actual password reset functionality with Supabase
-      // This is just a placeholder for now
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      setSubmitted(true);
-      toast({
-        title: "Reset link sent",
-        description: "If an account exists with that email, you will receive a password reset link.",
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
       });
-    } catch (error) {
+      
+      if (error) {
+        setErrorMessage(error.message);
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        setSubmitted(true);
+        toast({
+          title: "Reset link sent",
+          description: "If an account exists with that email, you will receive a password reset link.",
+        });
+      }
+    } catch (error: any) {
+      setErrorMessage(error.message || "An unexpected error occurred");
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",
@@ -49,6 +60,12 @@ const ForgotPassword = () => {
           </p>
         </div>
         
+        {errorMessage && (
+          <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-md text-sm">
+            {errorMessage}
+          </div>
+        )}
+        
         {!submitted ? (
           <form onSubmit={handleResetPassword} className="space-y-4">
             <div className="relative">
@@ -67,7 +84,7 @@ const ForgotPassword = () => {
               type="submit" 
               variant="gradient" 
               className="w-full h-12 btn-pulse"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !email}
             >
               {isSubmitting ? "Sending..." : "Send Reset Link"}
             </Button>

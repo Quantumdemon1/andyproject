@@ -12,7 +12,7 @@ interface AuthContextType {
     error: Error | null;
     data: Session | null;
   }>;
-  signUp: (email: string, password: string) => Promise<{
+  signUp: (email: string, password: string, username?: string) => Promise<{
     error: Error | null;
     data: { user: User | null; session: Session | null };
   }>;
@@ -32,7 +32,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
+        console.log("Auth state changed:", event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -48,6 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("Initial session check:", session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -81,12 +83,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const signIn = async (email: string, password: string) => {
     try {
+      console.log("Signing in with:", email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
       if (error) {
+        console.error("Sign in error:", error);
         toast({
           title: "Sign in failed",
           description: error.message,
@@ -95,6 +99,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         return { error, data: null };
       }
       
+      console.log("Sign in successful:", data.user?.email);
       toast({
         title: "Welcome back!",
         description: "You've successfully signed in.",
@@ -102,6 +107,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       
       return { error: null, data: data.session };
     } catch (error) {
+      console.error("Unexpected sign in error:", error);
       toast({
         title: "Sign in failed",
         description: "An unexpected error occurred. Please try again.",
@@ -111,14 +117,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, username?: string) => {
     try {
+      console.log("Signing up with:", email);
+      
+      // Add metadata for the user profile
+      const metadata = username ? { username } : {}; 
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: metadata,
+          emailRedirectTo: window.location.origin + '/home'
+        }
       });
       
       if (error) {
+        console.error("Sign up error:", error);
         toast({
           title: "Sign up failed",
           description: error.message,
@@ -127,13 +143,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         return { error, data: { user: null, session: null } };
       }
       
-      toast({
-        title: "Welcome!",
-        description: "Your account has been created.",
-      });
+      console.log("Sign up successful:", data.user?.email);
+      
+      // Check if email confirmation is required
+      if (data.session === null) {
+        toast({
+          title: "Verification email sent",
+          description: "Please check your email to confirm your account.",
+        });
+      } else {
+        toast({
+          title: "Welcome!",
+          description: "Your account has been created successfully.",
+        });
+      }
       
       return { error: null, data };
     } catch (error) {
+      console.error("Unexpected sign up error:", error);
       toast({
         title: "Sign up failed",
         description: "An unexpected error occurred. Please try again.",

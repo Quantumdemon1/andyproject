@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from "@/component
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { supabase } from "@/integrations/supabase/client";
 
 const loginSchema = z.object({
   email: z.string().email({
@@ -38,15 +40,16 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showSignupPassword, setShowSignupPassword] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  
   const {
     signIn,
     signUp,
     user
   } = useAuth();
   const navigate = useNavigate();
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (user) {
@@ -72,65 +75,71 @@ const Login = () => {
   });
 
   const handleLogin = async (data: z.infer<typeof loginSchema>) => {
+    setIsSubmitting(true);
+    setErrorMessage(null);
+    
     try {
-      const {
-        error
-      } = await signIn(data.email, data.password);
+      const { error } = await signIn(data.email, data.password);
+      if (error) {
+        setErrorMessage(error.message);
+        return;
+      }
+      // No need to navigate here, as the auth state change will trigger the useEffect
+    } catch (error: any) {
+      setErrorMessage(error.message || "An unexpected error occurred");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSignup = async (data: z.infer<typeof signupSchema>) => {
+    setIsSubmitting(true);
+    setErrorMessage(null);
+    
+    try {
+      const { error } = await signUp(data.email, data.password, data.username);
+      if (error) {
+        setErrorMessage(error.message);
+        return;
+      }
+      
+      // Automatically switch to login tab after successful signup
+      setActiveTab("login");
+      loginForm.setValue("email", data.email);
+    } catch (error: any) {
+      setErrorMessage(error.message || "An unexpected error occurred");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSocialLogin = async (provider: 'google' | 'facebook' | 'twitter') => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/home`
+        }
+      });
+      
       if (error) {
         toast({
           title: "Login failed",
           description: error.message,
           variant: "destructive"
         });
-        return;
       }
-      
-      toast({
-        title: "Login successful",
-        description: "Welcome back!"
-      });
-      
-      navigate("/home");
     } catch (error: any) {
       toast({
         title: "Login failed",
-        description: "An unexpected error occurred",
+        description: "Could not connect to provider",
         variant: "destructive"
       });
     }
   };
 
-  const handleSignup = async (data: z.infer<typeof signupSchema>) => {
-    try {
-      const {
-        error
-      } = await signUp(data.email, data.password);
-      if (error) {
-        toast({
-          title: "Signup failed",
-          description: error.message,
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      toast({
-        title: "Account created",
-        description: "Your account has been created successfully. You can now log in."
-      });
-      
-      setActiveTab("login");
-      loginForm.setValue("email", data.email);
-    } catch (error: any) {
-      toast({
-        title: "Signup failed",
-        description: "An unexpected error occurred",
-        variant: "destructive"
-      });
-    }
-  };
-
-  return <div className="flex min-h-screen bg-aura-darkPurple">
+  return (
+    <div className="flex min-h-screen bg-aura-darkPurple">
       <div className="hidden lg:flex lg:flex-1 bg-aura-blue relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-radial from-aura-blue/80 to-purple-800/90"></div>
         
@@ -146,6 +155,12 @@ const Login = () => {
       
       <div className="w-full lg:w-1/2 p-6 sm:p-10 flex items-center justify-center">
         <div className="w-full max-w-md space-y-6">
+          {errorMessage && (
+            <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-md text-sm">
+              {errorMessage}
+            </div>
+          )}
+          
           <Tabs defaultValue="login" value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-8">
               <TabsTrigger value="login" className="text-lg">Log In</TabsTrigger>
@@ -192,8 +207,13 @@ const Login = () => {
                     </Link>
                   </div>
                   
-                  <Button type="submit" variant="gradient" className="w-full h-12 btn-pulse">
-                    LOG IN
+                  <Button 
+                    type="submit" 
+                    variant="gradient" 
+                    className="w-full h-12 btn-pulse"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? "Signing In..." : "LOG IN"}
                   </Button>
                 </form>
               </Form>
@@ -208,13 +228,28 @@ const Login = () => {
               </div>
               
               <div className="flex flex-col gap-3 mt-6">
-                <Button variant="outline" className="w-full h-12 btn-pulse text-zinc-950">
+                <Button 
+                  variant="outline" 
+                  className="w-full h-12 btn-pulse text-zinc-200" 
+                  onClick={() => handleSocialLogin('google')}
+                  type="button"
+                >
                   Continue with Google
                 </Button>
-                <Button variant="outline" className="w-full h-12 btn-pulse text-zinc-950">
+                <Button 
+                  variant="outline" 
+                  className="w-full h-12 btn-pulse text-zinc-200" 
+                  onClick={() => handleSocialLogin('facebook')}
+                  type="button"
+                >
                   <Facebook className="mr-2" size={18} /> Continue with Facebook
                 </Button>
-                <Button variant="outline" className="w-full h-12 btn-pulse text-zinc-950">
+                <Button 
+                  variant="outline" 
+                  className="w-full h-12 btn-pulse text-zinc-200" 
+                  onClick={() => handleSocialLogin('twitter')}
+                  type="button"
+                >
                   <Twitter className="mr-2" size={18} /> Continue with Twitter
                 </Button>
               </div>
@@ -267,8 +302,13 @@ const Login = () => {
                     and confirm that you are at least 18 years old.
                   </div>
                   
-                  <Button type="submit" variant="gradient" className="w-full h-12 btn-pulse">
-                    SIGN UP
+                  <Button 
+                    type="submit" 
+                    variant="gradient" 
+                    className="w-full h-12 btn-pulse"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? "Signing Up..." : "SIGN UP"}
                   </Button>
                 </form>
               </Form>
@@ -283,13 +323,28 @@ const Login = () => {
               </div>
               
               <div className="flex flex-col gap-3 mt-6">
-                <Button variant="outline" className="w-full h-12 btn-pulse text-zinc-950">
+                <Button 
+                  variant="outline" 
+                  className="w-full h-12 btn-pulse text-zinc-200" 
+                  onClick={() => handleSocialLogin('google')}
+                  type="button"
+                >
                   Continue with Google
                 </Button>
-                <Button variant="outline" className="w-full h-12 btn-pulse text-zinc-950">
+                <Button 
+                  variant="outline" 
+                  className="w-full h-12 btn-pulse text-zinc-200" 
+                  onClick={() => handleSocialLogin('facebook')}
+                  type="button"
+                >
                   <Facebook className="mr-2" size={18} /> Continue with Facebook
                 </Button>
-                <Button variant="outline" className="w-full h-12 btn-pulse text-zinc-950">
+                <Button 
+                  variant="outline" 
+                  className="w-full h-12 btn-pulse text-zinc-200" 
+                  onClick={() => handleSocialLogin('twitter')}
+                  type="button"
+                >
                   <Twitter className="mr-2" size={18} /> Continue with Twitter
                 </Button>
               </div>
@@ -297,7 +352,8 @@ const Login = () => {
           </Tabs>
         </div>
       </div>
-    </div>;
+    </div>
+  );
 };
 
 export default Login;
