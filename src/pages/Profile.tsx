@@ -27,11 +27,12 @@ const Profile = () => {
               <p className="text-gray-400">@username</p>
             </div>
           </div>
-          <div className="mt-4">
-            <Button variant="gradient" className="btn-pulse">
-              <Edit size={16} className="mr-2" /> Edit Profile
-            </Button>
-          </div>
+        </div>
+        
+        <div className="mt-4">
+          <Button variant="gradient" className="btn-pulse">
+            <Edit size={16} className="mr-2" /> Edit Profile
+          </Button>
         </div>
         
         <div className="mt-6 flex gap-6 text-center">
