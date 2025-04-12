@@ -4,7 +4,7 @@ import MainLayout from "@/components/MainLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { ProfileEditForm } from "@/components/ProfileEditForm";
+import { ProfileEditForm } from "@/components/profile/edit/ProfileEditForm";
 import ProfileHeader from "@/components/profile/ProfileHeader";
 import ProfileAvatar from "@/components/profile/ProfileAvatar";
 import ProfileInfo from "@/components/profile/ProfileInfo";
