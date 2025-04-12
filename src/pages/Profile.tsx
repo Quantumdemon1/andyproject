@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/MainLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,6 +14,7 @@ export interface UserProfile {
   id: string;
   username: string | null;
   avatar_url: string | null;
+  cover_url?: string | null;
   display_name?: string | null;
   bio?: string | null;
   tags?: string | null;
