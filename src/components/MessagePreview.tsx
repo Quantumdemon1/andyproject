@@ -1,6 +1,7 @@
 
 import React from "react";
 import { formatDistanceToNow } from "date-fns";
+import { Pin, CheckCheck } from "lucide-react";
 
 interface MessagePreviewProps {
   id: string;
@@ -10,6 +11,8 @@ interface MessagePreviewProps {
   timestamp: Date;
   isOnline?: boolean;
   isActive?: boolean;
+  isPinned?: boolean;
+  onClick?: () => void;
 }
 
 const MessagePreview: React.FC<MessagePreviewProps> = ({
@@ -20,6 +23,8 @@ const MessagePreview: React.FC<MessagePreviewProps> = ({
   timestamp,
   isOnline = false,
   isActive = false,
+  isPinned = false,
+  onClick,
 }) => {
   const timeAgo = formatDistanceToNow(timestamp, { addSuffix: false });
   
@@ -28,6 +33,7 @@ const MessagePreview: React.FC<MessagePreviewProps> = ({
       className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer ${
         isActive ? "bg-white/10" : "hover:bg-white/5"
       }`}
+      onClick={onClick}
     >
       <div className="relative">
         <div 
@@ -43,10 +49,18 @@ const MessagePreview: React.FC<MessagePreviewProps> = ({
       
       <div className="flex-1 min-w-0">
         <div className="flex justify-between items-center">
-          <h4 className="font-medium text-sm truncate">{name}</h4>
+          <div className="flex items-center gap-1">
+            <h4 className="font-medium text-sm truncate">{name}</h4>
+            {isPinned && (
+              <Pin className="h-3 w-3 text-aura-purple" />
+            )}
+          </div>
           <span className="text-xs text-gray-400">{timeAgo}</span>
         </div>
-        <p className="text-sm text-gray-400 truncate">{message}</p>
+        <div className="flex items-center">
+          <p className="text-sm text-gray-400 truncate flex-1">{message}</p>
+          <CheckCheck className="h-3 w-3 text-aura-blue ml-1 flex-shrink-0" />
+        </div>
       </div>
     </div>
   );
