@@ -38,6 +38,7 @@ export interface UserProfile {
   id: string;
   username: string;
   avatar_url: string;
+  cover_url?: string; // Added this field
   is_online: boolean;
   last_seen: string;
 }
