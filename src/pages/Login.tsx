@@ -186,13 +186,13 @@ const Login = () => {
               </div>
               
               <div className="flex flex-col gap-3 mt-6">
-                <Button variant="outline" className="w-full h-12 btn-pulse">
+                <Button variant="outline" className="w-full h-12 btn-pulse text-zinc-950">
                   Continue with Google
                 </Button>
-                <Button variant="outline" className="w-full h-12 btn-pulse">
+                <Button variant="outline" className="w-full h-12 btn-pulse text-zinc-950">
                   <Facebook className="mr-2" size={18} /> Continue with Facebook
                 </Button>
-                <Button variant="outline" className="w-full h-12 btn-pulse">
+                <Button variant="outline" className="w-full h-12 btn-pulse text-zinc-950">
                   <Twitter className="mr-2" size={18} /> Continue with Twitter
                 </Button>
               </div>
