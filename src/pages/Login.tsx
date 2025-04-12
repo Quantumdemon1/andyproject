@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Mail, Lock, User, Facebook, Twitter } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -13,7 +13,6 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from "@/component
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { supabase } from "@/integrations/supabase/client";
 
 const loginSchema = z.object({
   email: z.string().email({
@@ -113,28 +112,28 @@ const Login = () => {
     }
   };
 
-  const handleSocialLogin = async (provider: 'google' | 'facebook' | 'twitter') => {
+  const handleTestLogin = async (role: 'admin' | 'user') => {
+    setIsSubmitting(true);
+    setErrorMessage(null);
+    
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: `${window.location.origin}/home`
-        }
-      });
+      const email = role === 'admin' ? 'admin@example.com' : 'user@example.com';
+      const password = 'password123';
+      
+      const { error } = await signIn(email, password);
       
       if (error) {
         toast({
-          title: "Login failed",
-          description: error.message,
+          title: "Test login failed",
+          description: `${role} account may not exist yet. Please create it first.`,
           variant: "destructive"
         });
+        setErrorMessage(`${role} account may not exist yet. Please create it first.`);
       }
     } catch (error: any) {
-      toast({
-        title: "Login failed",
-        description: "Could not connect to provider",
-        variant: "destructive"
-      });
+      setErrorMessage(error.message || "An unexpected error occurred");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -223,7 +222,7 @@ const Login = () => {
                   <div className="w-full border-t border-gray-700"></div>
                 </div>
                 <div className="relative px-4 bg-aura-darkPurple text-sm text-gray-400">
-                  or continue with
+                  quick access
                 </div>
               </div>
               
@@ -231,26 +230,18 @@ const Login = () => {
                 <Button 
                   variant="outline" 
                   className="w-full h-12 btn-pulse text-zinc-200" 
-                  onClick={() => handleSocialLogin('google')}
+                  onClick={() => handleTestLogin('admin')}
                   type="button"
                 >
-                  Continue with Google
+                  Login as Admin
                 </Button>
                 <Button 
                   variant="outline" 
                   className="w-full h-12 btn-pulse text-zinc-200" 
-                  onClick={() => handleSocialLogin('facebook')}
+                  onClick={() => handleTestLogin('user')}
                   type="button"
                 >
-                  <Facebook className="mr-2" size={18} /> Continue with Facebook
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full h-12 btn-pulse text-zinc-200" 
-                  onClick={() => handleSocialLogin('twitter')}
-                  type="button"
-                >
-                  <Twitter className="mr-2" size={18} /> Continue with Twitter
+                  Login as User
                 </Button>
               </div>
             </TabsContent>
@@ -313,40 +304,12 @@ const Login = () => {
                 </form>
               </Form>
               
-              <div className="relative flex items-center justify-center mt-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-700"></div>
+              <div className="pt-4 text-center text-sm text-gray-400">
+                <p>For testing purposes, you can create these accounts:</p>
+                <div className="mt-2 p-3 bg-aura-charcoal/50 rounded-md">
+                  <p className="mb-1"><span className="text-aura-blue">Admin:</span> admin@example.com / password123</p>
+                  <p><span className="text-aura-blue">User:</span> user@example.com / password123</p>
                 </div>
-                <div className="relative px-4 bg-aura-darkPurple text-sm text-gray-400">
-                  or continue with
-                </div>
-              </div>
-              
-              <div className="flex flex-col gap-3 mt-6">
-                <Button 
-                  variant="outline" 
-                  className="w-full h-12 btn-pulse text-zinc-200" 
-                  onClick={() => handleSocialLogin('google')}
-                  type="button"
-                >
-                  Continue with Google
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full h-12 btn-pulse text-zinc-200" 
-                  onClick={() => handleSocialLogin('facebook')}
-                  type="button"
-                >
-                  <Facebook className="mr-2" size={18} /> Continue with Facebook
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full h-12 btn-pulse text-zinc-200" 
-                  onClick={() => handleSocialLogin('twitter')}
-                  type="button"
-                >
-                  <Twitter className="mr-2" size={18} /> Continue with Twitter
-                </Button>
               </div>
             </TabsContent>
           </Tabs>

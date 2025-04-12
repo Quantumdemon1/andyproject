@@ -5,10 +5,11 @@ import { useAuth } from "@/contexts/AuthContext";
 
 interface PrivateRouteProps {
   children: React.ReactNode;
+  requiredRole?: 'admin' | 'user';
 }
 
-const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
-  const { user, loading } = useAuth();
+const PrivateRoute: React.FC<PrivateRouteProps> = ({ children, requiredRole }) => {
+  const { user, loading, userRole } = useAuth();
 
   // Show loading state if auth is still initializing
   if (loading) {
@@ -24,7 +25,15 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // Render children if authenticated
+  // Check role requirements if specified
+  if (requiredRole && userRole !== requiredRole) {
+    // If admin role is required but user isn't admin, redirect to home
+    if (requiredRole === 'admin' && userRole !== 'admin') {
+      return <Navigate to="/home" replace />;
+    }
+  }
+
+  // Render children if authenticated and meets role requirements
   return <>{children}</>;
 };
 

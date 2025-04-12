@@ -8,6 +8,7 @@ interface AuthContextType {
   session: Session | null;
   user: User | null;
   loading: boolean;
+  userRole: 'admin' | 'user' | null;
   signIn: (email: string, password: string) => Promise<{
     error: Error | null;
     data: Session | null;
@@ -28,6 +29,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<'admin' | 'user' | null>(null);
+
+  // Helper function to determine user role
+  const determineUserRole = (email: string | undefined): 'admin' | 'user' | null => {
+    if (!email) return null;
+    if (email === 'admin@example.com') return 'admin';
+    return 'user';
+  };
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -36,6 +45,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         console.log("Auth state changed:", event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
+        setUserRole(determineUserRole(session?.user?.email));
         
         // Update user presence when auth state changes
         if (session?.user) {
@@ -52,6 +62,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       console.log("Initial session check:", session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
+      setUserRole(determineUserRole(session?.user?.email));
       
       if (session?.user) {
         updateUserPresence(true);
@@ -100,9 +111,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
       
       console.log("Sign in successful:", data.user?.email);
+      
+      // Set user role based on email
+      setUserRole(determineUserRole(data.user?.email));
+      
       toast({
         title: "Welcome back!",
-        description: "You've successfully signed in.",
+        description: `You've successfully signed in as ${determineUserRole(data.user?.email)}`,
       });
       
       return { error: null, data: data.session };
@@ -145,6 +160,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       
       console.log("Sign up successful:", data.user?.email);
       
+      // Set user role based on email during signup
+      setUserRole(determineUserRole(data.user?.email));
+      
       // Check if email confirmation is required
       if (data.session === null) {
         toast({
@@ -154,7 +172,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       } else {
         toast({
           title: "Welcome!",
-          description: "Your account has been created successfully.",
+          description: `Your account has been created successfully as ${determineUserRole(data.user?.email)}`,
         });
       }
       
@@ -179,6 +197,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
     
     await supabase.auth.signOut();
+    setUserRole(null);
+    
     toast({
       title: "Signed out",
       description: "You've been signed out successfully.",
@@ -211,6 +231,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         session,
         user,
         loading,
+        userRole,
         signIn,
         signUp,
         signOut,

@@ -94,6 +94,14 @@ const ForgotPassword = () => {
                 Return to login
               </Link>
             </div>
+            
+            <div className="pt-4 mt-4 text-center text-sm text-gray-400 border-t border-gray-700">
+              <p className="mt-4">For testing purposes, you can use:</p>
+              <div className="mt-2 p-3 bg-aura-charcoal/50 rounded-md">
+                <p className="mb-1"><span className="text-aura-blue">Admin:</span> admin@example.com / password123</p>
+                <p><span className="text-aura-blue">User:</span> user@example.com / password123</p>
+              </div>
+            </div>
           </form>
         ) : (
           <div className="space-y-6 text-center">
