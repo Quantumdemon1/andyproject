@@ -2,31 +2,23 @@
 import React from "react";
 import { formatDistanceToNow } from "date-fns";
 import { Pin, CheckCheck } from "lucide-react";
+import { Avatar } from "@/components/ui/avatar";
+import { Conversation } from "@/hooks/useMessaging";
 
 interface MessagePreviewProps {
-  id: string;
-  avatarUrl: string;
-  name: string;
-  message: string;
-  timestamp: Date;
-  isOnline?: boolean;
+  conversation: Conversation;
   isActive?: boolean;
-  isPinned?: boolean;
   onClick?: () => void;
 }
 
 const MessagePreview: React.FC<MessagePreviewProps> = ({
-  id,
-  avatarUrl,
-  name,
-  message,
-  timestamp,
-  isOnline = false,
+  conversation,
   isActive = false,
-  isPinned = false,
   onClick,
 }) => {
-  const timeAgo = formatDistanceToNow(timestamp, { addSuffix: false });
+  const timeAgo = conversation.lastMessage?.created_at 
+    ? formatDistanceToNow(new Date(conversation.lastMessage.created_at), { addSuffix: false })
+    : "";
   
   return (
     <div 
@@ -36,11 +28,20 @@ const MessagePreview: React.FC<MessagePreviewProps> = ({
       onClick={onClick}
     >
       <div className="relative">
-        <div 
-          className="h-12 w-12 rounded-full bg-cover bg-center border border-white/20"
-          style={{ backgroundImage: `url(${avatarUrl})` }}
-        />
-        {isOnline && (
+        <Avatar className="h-12 w-12 border border-white/20">
+          {conversation.avatar_url ? (
+            <img 
+              src={conversation.avatar_url} 
+              alt={conversation.name} 
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div className="h-full w-full flex items-center justify-center bg-aura-purple text-white font-medium">
+              {conversation.name.charAt(0)}
+            </div>
+          )}
+        </Avatar>
+        {conversation.is_online && (
           <div className="absolute bottom-0 right-0">
             <div className="h-3 w-3 rounded-full bg-green-500 border-2 border-aura-charcoal"></div>
           </div>
@@ -50,16 +51,26 @@ const MessagePreview: React.FC<MessagePreviewProps> = ({
       <div className="flex-1 min-w-0">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-1">
-            <h4 className="font-medium text-sm truncate">{name}</h4>
-            {isPinned && (
+            <h4 className="font-medium text-sm truncate">{conversation.name}</h4>
+            {conversation.isPinned && (
               <Pin className="h-3 w-3 text-aura-purple" />
             )}
           </div>
-          <span className="text-xs text-gray-400">{timeAgo}</span>
+          {timeAgo && (
+            <span className="text-xs text-gray-400">{timeAgo}</span>
+          )}
         </div>
         <div className="flex items-center">
-          <p className="text-sm text-gray-400 truncate flex-1">{message}</p>
-          <CheckCheck className="h-3 w-3 text-aura-blue ml-1 flex-shrink-0" />
+          {conversation.lastMessage ? (
+            <>
+              <p className="text-sm text-gray-400 truncate flex-1">
+                {conversation.lastMessage.content || "Attachment"}
+              </p>
+              <CheckCheck className="h-3 w-3 text-aura-blue ml-1 flex-shrink-0" />
+            </>
+          ) : (
+            <p className="text-sm text-gray-400 truncate flex-1">New conversation</p>
+          )}
         </div>
       </div>
     </div>
