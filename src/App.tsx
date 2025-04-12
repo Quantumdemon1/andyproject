@@ -8,6 +8,10 @@ import Index from "./pages/Index";
 import Messages from "./pages/Messages";
 import Notifications from "./pages/Notifications";
 import Collections from "./pages/Collections";
+import Vault from "./pages/Vault";
+import Queue from "./pages/Queue";
+import Profile from "./pages/Profile";
+import More from "./pages/More";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
@@ -24,6 +28,10 @@ const App = () => (
           <Route path="/messages" element={<Messages />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/collections" element={<Collections />} />
+          <Route path="/vault" element={<Vault />} />
+          <Route path="/queue" element={<Queue />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/more" element={<More />} />
           <Route path="/login" element={<Login />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

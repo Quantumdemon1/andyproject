@@ -1,9 +1,10 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import { Home, Bell, MessageSquare, BookMarked, FolderArchive, Calendar, BarChart2, UserCircle, MoreHorizontal, PlusCircle } from "lucide-react";
+import { Home, Bell, MessageSquare, BookMarked, FolderArchive, Calendar, UserCircle, MoreHorizontal, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 interface SidebarProps {
   activePath: string;
@@ -17,8 +18,6 @@ const Sidebar: React.FC<SidebarProps> = ({ activePath }) => {
     { icon: BookMarked, label: "Collections", path: "/collections" },
     { icon: FolderArchive, label: "Vault", path: "/vault" },
     { icon: Calendar, label: "Queue", path: "/queue" },
-    { icon: BarChart2, label: "Statements", path: "/statements" },
-    { icon: BarChart2, label: "Statistics", path: "/statistics" },
     { icon: UserCircle, label: "My profile", path: "/profile" },
     { icon: MoreHorizontal, label: "More", path: "/more" },
   ];
@@ -41,9 +40,9 @@ const Sidebar: React.FC<SidebarProps> = ({ activePath }) => {
               <item.icon size={20} />
               <span>{item.label}</span>
               {item.badge && (
-                <span className="ml-auto notification-gradient text-white text-xs px-1.5 py-0.5 rounded-full">
+                <Badge variant="notification" className="ml-auto">
                   {item.badge}
-                </span>
+                </Badge>
               )}
             </Link>
           ))}
