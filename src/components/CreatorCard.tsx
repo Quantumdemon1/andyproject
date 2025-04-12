@@ -1,6 +1,8 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
+import { Check, DollarSign, UserPlus } from "lucide-react";
 
 interface CreatorCardProps {
   name: string;
@@ -17,38 +19,84 @@ const CreatorCard: React.FC<CreatorCardProps> = ({
   description, 
   imageUrl, 
   isSubscribed = false,
-  price = "$5.00"
+  price = "5.00"
 }) => {
+  const { toast } = useToast();
+  const [subscribed, setSubscribed] = useState(isSubscribed);
+  
+  const handleSubscribe = () => {
+    if (subscribed) {
+      toast({
+        title: "Already subscribed",
+        description: `You're already subscribed to ${name}'s content.`,
+      });
+      return;
+    }
+    
+    toast({
+      title: "Subscription successful!",
+      description: `You are now subscribed to ${name}'s content.`,
+    });
+    setSubscribed(true);
+  };
+  
   return (
-    <div className="rounded-xl overflow-hidden bg-aura-charcoal border border-white/10 transition-transform hover:-translate-y-1">
-      <div className="h-36 bg-gradient-to-r from-aura-purple/30 to-aura-blue/30" />
+    <div className="rounded-xl overflow-hidden bg-aura-charcoal border border-white/10 transition-all hover:-translate-y-1 hover:shadow-lg hover:shadow-aura-purple/20">
+      {/* Header image with gradient overlay */}
+      <div className="h-36 bg-gradient-to-br from-aura-purple to-aura-blue relative">
+        {/* Overlay gradient for better text readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+      </div>
       
-      <div className="px-4 pt-0 pb-4 relative">
+      <div className="p-4 pt-0 pb-4 relative">
+        {/* Profile image */}
         <div className="absolute -top-10 left-4">
-          <div className="h-20 w-20 rounded-full border-4 border-aura-charcoal" style={{ 
-            backgroundImage: `url(${imageUrl})`, 
-            backgroundSize: 'cover',
-            backgroundPosition: 'center'
-          }}/>
+          <div 
+            className="h-20 w-20 rounded-full border-4 border-aura-charcoal bg-cover bg-center"
+            style={{ backgroundImage: `url(${imageUrl})` }}
+          />
         </div>
         
         <div className="mt-12">
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="font-semibold text-lg">{name}</h3>
+          <div className="flex justify-between items-start mb-1">
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-lg">{name}</h3>
+              </div>
               <p className="text-sm text-gray-400">@{username}</p>
             </div>
             
             <Button 
-              variant={isSubscribed ? "secondary" : "default"}
+              variant={subscribed ? "secondary" : "default"}
               size="sm"
-              className={isSubscribed ? "bg-white/10 hover:bg-white/20" : "bg-aura-blue hover:bg-aura-blue/80"}
+              className={`flex items-center gap-1 ${
+                subscribed 
+                  ? "bg-white/10 hover:bg-white/20" 
+                  : "bg-gradient-to-r from-aura-blue to-aura-purple hover:from-aura-purple hover:to-aura-blue"
+              }`}
+              onClick={handleSubscribe}
             >
-              {isSubscribed ? "Subscribed" : `Subscribe $${price}`}
+              {subscribed ? (
+                <>
+                  <Check size={14} /> Subscribed
+                </>
+              ) : (
+                <>
+                  {price ? (
+                    <>
+                      <DollarSign size={14} /> Subscribe ${price}
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus size={14} /> Follow
+                    </>
+                  )}
+                </>
+              )}
             </Button>
           </div>
           
-          <p className="text-sm text-gray-300 mt-3 line-clamp-2">{description}</p>
+          <p className="text-sm text-gray-300 line-clamp-2 mt-2">{description}</p>
         </div>
       </div>
     </div>

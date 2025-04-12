@@ -10,7 +10,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-gradient-to-r from-aura-charcoal to-aura-blue hover:from-aura-darkPurple hover:to-aura-purple shadow-md hover:shadow-lg text-white transition-all duration-300",
+        default: "bg-gradient-to-r from-aura-blue to-aura-purple hover:from-aura-purple hover:to-aura-blue text-white shadow-md hover:shadow-lg transition-all duration-300",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
@@ -19,7 +19,7 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
-        gradient: "bg-gradient-to-r from-aura-charcoal to-aura-purple hover:from-aura-darkPurple hover:to-aura-blue shadow-md hover:shadow-lg text-white transition-all duration-300",
+        gradient: "bg-gradient-to-r from-aura-charcoal to-aura-purple hover:from-aura-purple hover:to-aura-blue shadow-md hover:shadow-lg text-white transition-all duration-300",
       },
       size: {
         default: "h-10 px-4 py-2",

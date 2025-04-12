@@ -1,10 +1,11 @@
 
-import React from "react";
+import React, { useState } from "react";
 import MainLayout from "@/components/MainLayout";
 import CreatorCard from "@/components/CreatorCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const SidebarContent = () => (
   <div className="space-y-6">
@@ -65,7 +66,9 @@ const SidebarContent = () => (
 );
 
 const Index = () => {
-  // Mock data for creators
+  const [activeTab, setActiveTab] = useState("all");
+
+  // Enhanced creator data with more realistic details
   const creators = [
     {
       id: "1",
@@ -118,6 +121,11 @@ const Index = () => {
     },
   ];
 
+  // Filter creators based on the selected tab
+  const filteredCreators = activeTab === "purchased" 
+    ? creators.filter(creator => creator.isSubscribed) 
+    : creators;
+
   return (
     <MainLayout title="HOME" icons searchBar rightSidebar={<SidebarContent />}>
       <div>
@@ -155,14 +163,24 @@ const Index = () => {
           </div>
         </div>
 
-        <div className="flex gap-3 mb-8">
-          <Button className="rounded-full bg-white/10 text-white hover:bg-white/20">
-            All
-          </Button>
-          <Button className="rounded-full bg-transparent text-gray-400 hover:bg-white/10 hover:text-white">
-            Purchased
-          </Button>
-        </div>
+        <Tabs defaultValue="all" className="mb-8">
+          <TabsList className="bg-transparent border-b border-white/10 w-full justify-start p-0 h-auto">
+            <TabsTrigger 
+              value="all" 
+              onClick={() => setActiveTab("all")}
+              className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-aura-blue data-[state=active]:rounded-none px-6 py-2 text-gray-400"
+            >
+              All
+            </TabsTrigger>
+            <TabsTrigger 
+              value="purchased" 
+              onClick={() => setActiveTab("purchased")}
+              className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-aura-blue data-[state=active]:rounded-none px-6 py-2 text-gray-400"
+            >
+              Purchased
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
         
         <div className="flex border border-aura-blue/30 p-3 rounded-lg mb-6 items-center bg-aura-blue/5">
           <div className="text-aura-blue mr-3">
@@ -177,15 +195,20 @@ const Index = () => {
         </div>
         
         <div className="mb-6">
-          <Button className="w-full bg-aura-blue hover:bg-aura-blue/80 text-white py-6">
+          <Button className="w-full bg-gradient-to-r from-aura-blue to-aura-purple hover:from-aura-purple hover:to-aura-blue transition-colors duration-300 text-white py-6">
             LOAD NEW POSTS
           </Button>
         </div>
         
-        <h2 className="text-2xl font-bold mb-6">Discover Creators</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold">Discover Creators</h2>
+          <Button variant="outline" size="sm" className="border-aura-blue/50 text-aura-blue hover:bg-aura-blue/10">
+            View All
+          </Button>
+        </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {creators.map(creator => (
+          {filteredCreators.map(creator => (
             <CreatorCard 
               key={creator.id}
               name={creator.name}
