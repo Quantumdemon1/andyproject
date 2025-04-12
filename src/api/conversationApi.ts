@@ -21,10 +21,7 @@ export async function fetchConversations(userId: string) {
     // Fetch conversations details
     const { data: conversationsData, error: conversationsError } = await supabase
       .from('conversations')
-      .select(`
-        *,
-        conversation_participants!inner(user_id)
-      `)
+      .select('*')
       .in('id', conversationIds);
 
     if (conversationsError) throw conversationsError;
@@ -57,28 +54,37 @@ export async function fetchConversations(userId: string) {
         // Get participants
         const { data: participantsData, error: participantsError } = await supabase
           .from('conversation_participants')
-          .select(`
-            id,
-            user_id,
-            user_profiles:user_id(username, avatar_url, is_online)
-          `)
+          .select('id, user_id')
           .eq('conversation_id', conv.id);
 
         if (participantsError) throw participantsError;
 
-        // Format participants
-        const participants = participantsData.map(p => {
-          // Safely access nested properties
-          const userProfile = p.user_profiles;
-                
-          return {
-            id: p.id,
-            user_id: p.user_id,
-            username: userProfile?.username,
-            avatar_url: userProfile?.avatar_url,
-            is_online: userProfile?.is_online || false
-          };
-        });
+        // Fetch user profiles for participants
+        const participants = [];
+        for (const participant of participantsData) {
+          const { data: userProfile, error: userProfileError } = await supabase
+            .from('user_profiles')
+            .select('username, avatar_url, is_online')
+            .eq('id', participant.user_id)
+            .single();
+          
+          if (userProfileError) {
+            console.error('Error fetching user profile:', userProfileError);
+            // Add participant with minimal data if profile fetch fails
+            participants.push({
+              id: participant.id,
+              user_id: participant.user_id
+            });
+          } else {
+            participants.push({
+              id: participant.id,
+              user_id: participant.user_id,
+              username: userProfile.username,
+              avatar_url: userProfile.avatar_url,
+              is_online: userProfile.is_online || false
+            });
+          }
+        }
 
         // For direct messages, use the other user's profile for display
         let name = conv.name;
