@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +12,6 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from "@/component
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-
 const loginSchema = z.object({
   email: z.string().email({
     message: "Please enter a valid email address"
@@ -22,7 +20,6 @@ const loginSchema = z.object({
     message: "Password must be at least 6 characters"
   })
 });
-
 const signupSchema = z.object({
   email: z.string().email({
     message: "Please enter a valid email address"
@@ -34,28 +31,26 @@ const signupSchema = z.object({
     message: "Username must be at least 3 characters"
   })
 });
-
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showSignupPassword, setShowSignupPassword] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  
   const {
     signIn,
     signUp,
     user
   } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
-
+  const {
+    toast
+  } = useToast();
   useEffect(() => {
     if (user) {
       navigate("/home");
     }
   }, [user, navigate]);
-
   const loginForm = useForm({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -63,7 +58,6 @@ const Login = () => {
       password: ""
     }
   });
-
   const signupForm = useForm({
     resolver: zodResolver(signupSchema),
     defaultValues: {
@@ -72,13 +66,13 @@ const Login = () => {
       username: ""
     }
   });
-
   const handleLogin = async (data: z.infer<typeof loginSchema>) => {
     setIsSubmitting(true);
     setErrorMessage(null);
-    
     try {
-      const { error } = await signIn(data.email, data.password);
+      const {
+        error
+      } = await signIn(data.email, data.password);
       if (error) {
         setErrorMessage(error.message);
         return;
@@ -90,18 +84,18 @@ const Login = () => {
       setIsSubmitting(false);
     }
   };
-
   const handleSignup = async (data: z.infer<typeof signupSchema>) => {
     setIsSubmitting(true);
     setErrorMessage(null);
-    
     try {
-      const { error } = await signUp(data.email, data.password, data.username);
+      const {
+        error
+      } = await signUp(data.email, data.password, data.username);
       if (error) {
         setErrorMessage(error.message);
         return;
       }
-      
+
       // Automatically switch to login tab after successful signup
       setActiveTab("login");
       loginForm.setValue("email", data.email);
@@ -111,17 +105,15 @@ const Login = () => {
       setIsSubmitting(false);
     }
   };
-
   const handleTestLogin = async (role: 'admin' | 'user') => {
     setIsSubmitting(true);
     setErrorMessage(null);
-    
     try {
       const email = role === 'admin' ? 'admin@example.com' : 'user@example.com';
       const password = 'password123';
-      
-      const { error } = await signIn(email, password);
-      
+      const {
+        error
+      } = await signIn(email, password);
       if (error) {
         toast({
           title: "Test login failed",
@@ -136,9 +128,7 @@ const Login = () => {
       setIsSubmitting(false);
     }
   };
-
-  return (
-    <div className="flex min-h-screen bg-aura-darkPurple">
+  return <div className="flex min-h-screen bg-aura-darkPurple">
       <div className="hidden lg:flex lg:flex-1 bg-aura-blue relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-radial from-aura-blue/80 to-purple-800/90"></div>
         
@@ -154,11 +144,9 @@ const Login = () => {
       
       <div className="w-full lg:w-1/2 p-6 sm:p-10 flex items-center justify-center">
         <div className="w-full max-w-md space-y-6">
-          {errorMessage && (
-            <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-md text-sm">
+          {errorMessage && <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-md text-sm">
               {errorMessage}
-            </div>
-          )}
+            </div>}
           
           <Tabs defaultValue="login" value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-8">
@@ -206,12 +194,7 @@ const Login = () => {
                     </Link>
                   </div>
                   
-                  <Button 
-                    type="submit" 
-                    variant="gradient" 
-                    className="w-full h-12 btn-pulse"
-                    disabled={isSubmitting}
-                  >
+                  <Button type="submit" variant="gradient" className="w-full h-12 btn-pulse" disabled={isSubmitting}>
                     {isSubmitting ? "Signing In..." : "LOG IN"}
                   </Button>
                 </form>
@@ -227,20 +210,10 @@ const Login = () => {
               </div>
               
               <div className="flex flex-col gap-3 mt-6">
-                <Button 
-                  variant="outline" 
-                  className="w-full h-12 btn-pulse text-zinc-200" 
-                  onClick={() => handleTestLogin('admin')}
-                  type="button"
-                >
+                <Button variant="outline" onClick={() => handleTestLogin('admin')} type="button" className="w-full h-12 btn-pulse text-zinc-950">
                   Login as Admin
                 </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full h-12 btn-pulse text-zinc-200" 
-                  onClick={() => handleTestLogin('user')}
-                  type="button"
-                >
+                <Button variant="outline" onClick={() => handleTestLogin('user')} type="button" className="w-full h-12 btn-pulse text-zinc-950">
                   Login as User
                 </Button>
               </div>
@@ -293,12 +266,7 @@ const Login = () => {
                     and confirm that you are at least 18 years old.
                   </div>
                   
-                  <Button 
-                    type="submit" 
-                    variant="gradient" 
-                    className="w-full h-12 btn-pulse"
-                    disabled={isSubmitting}
-                  >
+                  <Button type="submit" variant="gradient" className="w-full h-12 btn-pulse" disabled={isSubmitting}>
                     {isSubmitting ? "Signing Up..." : "SIGN UP"}
                   </Button>
                 </form>
@@ -315,8 +283,6 @@ const Login = () => {
           </Tabs>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Login;
