@@ -16,6 +16,8 @@ import Discover from "./pages/Discover";
 import More from "./pages/More";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
+import AdminPanel from "./pages/Admin";
+import CreatorDashboard from "./pages/CreatorDashboard";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +39,8 @@ const App = () => (
             <Route path="/discover" element={<Discover />} />
             <Route path="/more" element={<More />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/admin" element={<AdminPanel />} />
+            <Route path="/creator" element={<CreatorDashboard />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
