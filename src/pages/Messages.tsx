@@ -9,6 +9,7 @@ import { Search, Plus, Pin, Filter, Archive, Loader2 } from "lucide-react";
 import { useMessaging } from "@/hooks/useMessaging";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/components/ui/use-toast";
+
 const Messages = () => {
   const {
     user,
@@ -28,22 +29,17 @@ const Messages = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Filter conversations based on activeTab and searchQuery
   const filteredConversations = useMemo(() => {
     return conversations.filter(conv => {
-      // Tab filter
       if (activeTab === "pinned" && !conv.isPinned) return false;
       if (activeTab === "unread") {
-        // Check if there are unread messages
         const hasUnreadMessages = conv.lastMessage?.status !== "read";
         if (!hasUnreadMessages) return false;
       }
       if (activeTab === "archive") {
-        // Archive functionality would need to be implemented
         return false;
       }
 
-      // Search filter
       if (searchQuery) {
         const searchLower = searchQuery.toLowerCase();
         const nameMatch = conv.name.toLowerCase().includes(searchLower);
@@ -53,6 +49,7 @@ const Messages = () => {
       return true;
     });
   }, [conversations, activeTab, searchQuery]);
+
   const tabs = [{
     id: "all",
     label: "All",
@@ -70,12 +67,12 @@ const Messages = () => {
     label: "Archive",
     icon: <Archive className="h-4 w-4" />
   }];
+
   const handlePinClick = (e: React.MouseEvent, convId: string) => {
     e.stopPropagation();
     togglePinConversation(convId);
   };
 
-  // If auth is not ready, show loading state
   if (authLoading) {
     return <MainLayout title="MESSAGES" backButton icons>
         <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
@@ -87,7 +84,6 @@ const Messages = () => {
       </MainLayout>;
   }
 
-  // If not logged in, show auth prompt
   if (!user) {
     return <MainLayout title="MESSAGES" backButton icons>
         <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
@@ -114,9 +110,9 @@ const Messages = () => {
         </div>
       </MainLayout>;
   }
+
   return <MainLayout title="MESSAGES" backButton icons>
       <div className="flex h-[calc(100vh-4rem)]">
-        {/* Left side - Message list */}
         <div className="w-96 border-r border-white/10 overflow-y-auto flex flex-col">
           <div className="p-4 border-b border-white/10">
             <div className="relative mb-4">
@@ -159,7 +155,6 @@ const Messages = () => {
           </div>
         </div>
         
-        {/* Right side - Conversation or empty state */}
         <div className="flex-1 flex flex-col">
           {currentConversation ? <Conversation currentChat={currentConversation} messages={messages} sendMessage={sendMessage} deleteMessage={deleteMessage} /> : <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
@@ -176,4 +171,5 @@ const Messages = () => {
       </div>
     </MainLayout>;
 };
+
 export default Messages;

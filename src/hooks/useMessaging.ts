@@ -2,50 +2,9 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from '@/components/ui/use-toast';
-
-export interface Message {
-  id: string;
-  content: string;
-  sender_id: string;
-  conversation_id: string;
-  created_at: string;
-  status: 'sent' | 'delivered' | 'read';
-  attachment_url?: string;
-  isMe?: boolean; // Computed locally
-  updated_at: string;
-}
-
-export interface Conversation {
-  id: string;
-  name: string;
-  is_group: boolean;
-  created_at: string;
-  updated_at: string;
-  avatar_url?: string;
-  is_online?: boolean;
-  participants?: {
-    id: string;
-    user_id: string;
-    username?: string;
-    avatar_url?: string;
-    is_online?: boolean;
-  }[];
-  lastMessage?: {
-    content: string;
-    created_at: string;
-    status: string;
-  };
-  isPinned?: boolean; // Calculated locally
-}
-
-export interface UserProfile {
-  id: string;
-  username: string;
-  avatar_url: string;
-  is_online: boolean;
-  last_seen: string;
-}
+import { Conversation, Message } from '@/types/messaging';
+import { fetchConversations, togglePinConversation as togglePin } from '@/api/conversationApi';
+import { fetchMessages, sendMessage as sendMsg, deleteMessage as deleteMsg } from '@/api/messageApi';
 
 export function useMessaging() {
   const { user } = useAuth();
@@ -65,148 +24,31 @@ export function useMessaging() {
       return;
     }
 
-    const fetchConversations = async () => {
+    const loadConversations = async () => {
       try {
         setLoading(true);
-
-        // Fetch conversations the user is part of
-        const { data: participantData, error: participantError } = await supabase
-          .from('conversation_participants')
-          .select('conversation_id')
-          .eq('user_id', user.id);
-
-        if (participantError) throw participantError;
-
-        const conversationIds = participantData.map(p => p.conversation_id);
-        if (conversationIds.length === 0) {
-          setConversations([]);
-          setLoading(false);
-          return;
-        }
-
-        // Fetch conversations details
-        const { data: conversationsData, error: conversationsError } = await supabase
-          .from('conversations')
-          .select(`
-            *,
-            conversation_participants!inner(user_id)
-          `)
-          .in('id', conversationIds);
-
-        if (conversationsError) throw conversationsError;
-
-        // Fetch pinned conversations
-        const { data: pinnedData, error: pinnedError } = await supabase
-          .from('pinned_conversations')
-          .select('conversation_id')
-          .eq('user_id', user.id);
-
-        if (pinnedError) throw pinnedError;
+        const conversationsData = await fetchConversations(user.id);
+        setConversations(conversationsData);
         
-        const pinnedIds = pinnedData.map(p => p.conversation_id);
+        // Update pinned conversations
+        const pinnedIds = conversationsData
+          .filter(conv => conv.isPinned)
+          .map(conv => conv.id);
         setPinnedConversations(pinnedIds);
-
-        // Fetch last message for each conversation
-        const enrichedConversations = await Promise.all(
-          conversationsData.map(async (conv) => {
-            // Get last message
-            const { data: lastMessageData, error: lastMessageError } = await supabase
-              .from('messages')
-              .select('content, created_at, status')
-              .eq('conversation_id', conv.id)
-              .order('created_at', { ascending: false })
-              .limit(1);
-
-            if (lastMessageError) throw lastMessageError;
-            
-            const lastMessage = lastMessageData?.[0] || null;
-
-            // Get participants
-            const { data: participantsData, error: participantsError } = await supabase
-              .from('conversation_participants')
-              .select(`
-                id,
-                user_id,
-                user_profiles(username, avatar_url, is_online)
-              `)
-              .eq('conversation_id', conv.id);
-
-            if (participantsError) throw participantsError;
-
-            // Format participants
-            const participants = participantsData.map(p => {
-              // Safely access nested properties
-              const userProfile = Array.isArray(p.user_profiles) 
-                ? p.user_profiles[0] 
-                : (p.user_profiles as any);
-                
-              return {
-                id: p.id,
-                user_id: p.user_id,
-                username: userProfile?.username,
-                avatar_url: userProfile?.avatar_url,
-                is_online: userProfile?.is_online || false
-              };
-            });
-
-            // For direct messages, use the other user's profile for display
-            let name = conv.name;
-            let avatar_url;
-            let is_online = false;
-            
-            if (!conv.is_group) {
-              const otherUser = participants.find(p => p.user_id !== user.id);
-              if (otherUser) {
-                name = name || otherUser.username || 'User';
-                avatar_url = otherUser.avatar_url;
-                is_online = otherUser.is_online || false;
-              }
-            } else {
-              // Group chat - use first 2 avatars or default
-              avatar_url = participants[0]?.avatar_url;
-            }
-
-            return {
-              ...conv,
-              name,
-              avatar_url,
-              is_online,
-              participants,
-              lastMessage,
-              isPinned: pinnedIds.includes(conv.id)
-            };
-          })
-        );
-
-        // Sort conversations by latest message
-        enrichedConversations.sort((a, b) => {
-          const aDate = a.lastMessage?.created_at || a.updated_at;
-          const bDate = b.lastMessage?.created_at || b.updated_at;
-          return new Date(bDate).getTime() - new Date(aDate).getTime();
-        });
-
-        setConversations(enrichedConversations);
-      } catch (error) {
-        console.error('Error fetching conversations:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load conversations',
-          variant: 'destructive'
-        });
       } finally {
         setLoading(false);
       }
     };
 
-    fetchConversations();
+    loadConversations();
 
     // Set up real-time subscription for conversations
     const conversationsChannel = supabase
       .channel('conversations-changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'conversations' },
-        (payload) => {
-          fetchConversations();
+        () => {
+          loadConversations();
         }
       )
       .subscribe();
@@ -216,8 +58,8 @@ export function useMessaging() {
       .channel('messages-changes')
       .on('postgres_changes', 
         { event: 'INSERT', schema: 'public', table: 'messages' },
-        (payload) => {
-          fetchConversations();
+        () => {
+          loadConversations();
         }
       )
       .subscribe();
@@ -227,8 +69,8 @@ export function useMessaging() {
       .channel('pinned-changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'pinned_conversations' },
-        (payload) => {
-          fetchConversations();
+        () => {
+          loadConversations();
         }
       )
       .subscribe();
@@ -244,50 +86,12 @@ export function useMessaging() {
   useEffect(() => {
     if (!currentConversation || !user) return;
 
-    const fetchMessages = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('messages')
-          .select('*')
-          .eq('conversation_id', currentConversation.id)
-          .order('created_at', { ascending: true });
-
-        if (error) throw error;
-
-        // Mark messages as read
-        const unreadMessages = data.filter(
-          m => m.sender_id !== user.id && m.status !== 'read'
-        );
-        
-        if (unreadMessages.length > 0) {
-          unreadMessages.forEach(async (message) => {
-            await supabase.rpc('update_message_status', {
-              _message_id: message.id,
-              _status: 'read'
-            });
-          });
-        }
-
-        // Add isMe flag to messages and ensure proper type casting
-        const formattedMessages: Message[] = data.map(message => ({
-          ...message,
-          // Ensure status is one of the allowed values
-          status: (message.status as 'sent' | 'delivered' | 'read') || 'sent',
-          isMe: message.sender_id === user.id
-        }));
-
-        setMessages(formattedMessages);
-      } catch (error) {
-        console.error('Error fetching messages:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load messages',
-          variant: 'destructive'
-        });
-      }
+    const loadMessages = async () => {
+      const messagesData = await fetchMessages(currentConversation.id, user.id);
+      setMessages(messagesData);
     };
 
-    fetchMessages();
+    loadMessages();
 
     // Subscribe to message changes for the current conversation
     const messagesChannel = supabase
@@ -354,27 +158,7 @@ export function useMessaging() {
 
   const sendMessage = async (content: string, attachmentUrl?: string) => {
     if (!user || !currentConversation) return;
-
-    try {
-      const newMessage = {
-        conversation_id: currentConversation.id,
-        sender_id: user.id,
-        content,
-        attachment_url: attachmentUrl,
-      };
-
-      const { error } = await supabase.from('messages').insert(newMessage);
-      
-      if (error) throw error;
-
-    } catch (error) {
-      console.error('Error sending message:', error);
-      toast({
-        title: 'Message not sent',
-        description: 'There was an error sending your message',
-        variant: 'destructive'
-      });
-    }
+    await sendMsg(currentConversation.id, user.id, content, attachmentUrl);
   };
 
   const togglePinConversation = async (conversationId: string) => {
@@ -382,74 +166,34 @@ export function useMessaging() {
 
     try {
       const isPinned = pinnedConversations.includes(conversationId);
+      const newPinnedState = await togglePin(user.id, conversationId, isPinned);
       
-      if (isPinned) {
-        // Unpin the conversation
-        const { error } = await supabase
-          .from('pinned_conversations')
-          .delete()
-          .eq('conversation_id', conversationId)
-          .eq('user_id', user.id);
-
-        if (error) throw error;
-
-        setPinnedConversations(prev => prev.filter(id => id !== conversationId));
-      } else {
-        // Pin the conversation
-        const { error } = await supabase
-          .from('pinned_conversations')
-          .insert({
-            conversation_id: conversationId,
-            user_id: user.id
-          });
-
-        if (error) throw error;
-
+      // Update local pinned conversations state
+      if (newPinnedState) {
         setPinnedConversations(prev => [...prev, conversationId]);
+      } else {
+        setPinnedConversations(prev => prev.filter(id => id !== conversationId));
       }
 
-      // Update local state
+      // Update conversations state
       setConversations(prev => 
         prev.map(conv => 
           conv.id === conversationId 
-            ? { ...conv, isPinned: !isPinned } 
+            ? { ...conv, isPinned: newPinnedState } 
             : conv
         )
       );
-
     } catch (error) {
-      console.error('Error toggling pin:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update pinned conversation',
-        variant: 'destructive'
-      });
+      // Error is already handled in the API function
+      console.error("Error in togglePinConversation:", error);
     }
   };
 
   const deleteMessage = async (messageId: string) => {
     if (!user) return;
-
-    try {
-      const { error } = await supabase
-        .from('messages')
-        .delete()
-        .eq('id', messageId)
-        .eq('sender_id', user.id);
-
-      if (error) throw error;
-
-      // Remove message from local state
-      setMessages(prev => prev.filter(msg => msg.id !== messageId));
-
-    } catch (error) {
-      console.error('Error deleting message:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to delete message',
-        variant: 'destructive'
-      });
-    }
+    await deleteMsg(messageId, user.id);
+    // Remove message from local state
+    setMessages(prev => prev.filter(msg => msg.id !== messageId));
   };
 
   return {
@@ -464,3 +208,6 @@ export function useMessaging() {
     pinnedConversations
   };
 }
+
+// Re-export the types
+export type { Message, Conversation, UserProfile } from '@/types/messaging';
