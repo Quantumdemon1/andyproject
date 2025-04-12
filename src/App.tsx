@@ -12,6 +12,7 @@ import Collections from "./pages/Collections";
 import Vault from "./pages/Vault";
 import Queue from "./pages/Queue";
 import Profile from "./pages/Profile";
+import Discover from "./pages/Discover";
 import More from "./pages/More";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/vault" element={<Vault />} />
             <Route path="/queue" element={<Queue />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/discover" element={<Discover />} />
             <Route path="/more" element={<More />} />
             <Route path="/login" element={<Login />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
