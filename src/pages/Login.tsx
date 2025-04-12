@@ -1,14 +1,106 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Eye, EyeOff } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Eye, EyeOff, Mail, Lock, User, Facebook, Twitter } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+
+const loginSchema = z.object({
+  email: z.string().email({ message: "Please enter a valid email address" }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters" })
+});
+
+const signupSchema = z.object({
+  email: z.string().email({ message: "Please enter a valid email address" }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  username: z.string().min(3, { message: "Username must be at least 3 characters" })
+});
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
-  
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
+  const [activeTab, setActiveTab] = useState("login");
+  const { signIn, signUp } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const loginForm = useForm({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: ""
+    }
+  });
+
+  const signupForm = useForm({
+    resolver: zodResolver(signupSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+      username: ""
+    }
+  });
+
+  const handleLogin = async (data: z.infer<typeof loginSchema>) => {
+    try {
+      const { error } = await signIn(data.email, data.password);
+      
+      if (error) {
+        toast({
+          title: "Login failed",
+          description: error.message,
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      navigate("/");
+    } catch (error: any) {
+      toast({
+        title: "Login failed",
+        description: "An unexpected error occurred",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleSignup = async (data: z.infer<typeof signupSchema>) => {
+    try {
+      const { error } = await signUp(data.email, data.password);
+      
+      if (error) {
+        toast({
+          title: "Signup failed",
+          description: error.message,
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      toast({
+        title: "Account created",
+        description: "Your account has been created successfully."
+      });
+      
+      setActiveTab("login");
+    } catch (error: any) {
+      toast({
+        title: "Signup failed",
+        description: "An unexpected error occurred",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-aura-darkPurple">
       {/* Left side - Banner */}
@@ -25,69 +117,215 @@ const Login = () => {
         </div>
       </div>
       
-      {/* Right side - Login form */}
+      {/* Right side - Auth form */}
       <div className="w-full lg:w-1/2 p-6 sm:p-10 flex items-center justify-center">
         <div className="w-full max-w-md space-y-6">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold">Log in</h2>
-          </div>
-          
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Input
-                type="email"
-                placeholder="Email"
-                className="h-12 bg-white/5 border-white/10"
-              />
-            </div>
+          <Tabs 
+            defaultValue="login" 
+            value={activeTab} 
+            onValueChange={setActiveTab}
+            className="w-full"
+          >
+            <TabsList className="grid w-full grid-cols-2 mb-8">
+              <TabsTrigger value="login" className="text-lg">Log In</TabsTrigger>
+              <TabsTrigger value="signup" className="text-lg">Sign Up</TabsTrigger>
+            </TabsList>
             
-            <div className="space-y-2 relative">
-              <Input
-                type={showPassword ? "text" : "password"}
-                placeholder="Password"
-                className="h-12 bg-white/5 border-white/10 pr-10"
-              />
-              <button
-                type="button"
-                className="absolute right-3 top-3 text-gray-400"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
+            <TabsContent value="login" className="space-y-4">
+              <Form {...loginForm}>
+                <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
+                  <FormField
+                    control={loginForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-3 text-gray-400" size={18} />
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type="email"
+                              placeholder="Email"
+                              className="h-12 bg-white/5 border-white/10 pl-10"
+                            />
+                          </FormControl>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={loginForm.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-3 text-gray-400" size={18} />
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type={showPassword ? "text" : "password"}
+                              placeholder="Password"
+                              className="h-12 bg-white/5 border-white/10 pl-10 pr-10"
+                            />
+                          </FormControl>
+                          <button
+                            type="button"
+                            className="absolute right-3 top-3 text-gray-400"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                          </button>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="remember" />
+                      <Label htmlFor="remember" className="text-sm text-gray-400">Remember me</Label>
+                    </div>
+                    <Link to="/forgot-password" className="text-sm text-aura-blue hover:underline">
+                      Forgot password?
+                    </Link>
+                  </div>
+                  
+                  <Button type="submit" variant="gradient" className="w-full h-12 btn-pulse">
+                    LOG IN
+                  </Button>
+                </form>
+              </Form>
+              
+              <div className="relative flex items-center justify-center mt-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-700"></div>
+                </div>
+                <div className="relative px-4 bg-aura-darkPurple text-sm text-gray-400">
+                  or continue with
+                </div>
+              </div>
+              
+              <div className="flex flex-col gap-3 mt-6">
+                <Button variant="outline" className="w-full h-12 border-white/20 hover:bg-white/5">
+                  Continue with Google
+                </Button>
+                <Button variant="outline" className="w-full h-12 border-white/20 hover:bg-white/5">
+                  <Facebook className="mr-2" size={18} /> Continue with Facebook
+                </Button>
+                <Button variant="outline" className="w-full h-12 border-white/20 hover:bg-white/5">
+                  <Twitter className="mr-2" size={18} /> Continue with Twitter
+                </Button>
+              </div>
+            </TabsContent>
             
-            <Button variant="gradient" className="w-full h-12 btn-pulse">
-              LOG IN
-            </Button>
-          </div>
-          
-          <div className="text-center text-sm text-gray-400 space-y-4">
-            <p>
-              <Link to="/forgot-password" className="text-aura-blue hover:underline">
-                Forgot password?
-              </Link>
-              {" · "}
-              <Link to="/signup" className="text-aura-blue hover:underline">
-                Sign up for Aura Canvas
-              </Link>
-            </p>
-            
-            <p>
-              By logging in and using Aura Canvas, you agree to our Terms of Service and Privacy Policy, and confirm that you are at least 18 years old.
-            </p>
-          </div>
-          
-          <div className="flex flex-col gap-3">
-            <Button variant="outline" className="w-full h-12 border-white/20 hover:bg-white/5">
-              Continue with Google
-            </Button>
-            <Button variant="outline" className="w-full h-12 border-white/20 hover:bg-white/5">
-              Continue with Apple
-            </Button>
-            <Button variant="outline" className="w-full h-12 border-white/20 hover:bg-white/5">
-              Continue with Twitter
-            </Button>
-          </div>
+            <TabsContent value="signup" className="space-y-4">
+              <Form {...signupForm}>
+                <form onSubmit={signupForm.handleSubmit(handleSignup)} className="space-y-4">
+                  <FormField
+                    control={signupForm.control}
+                    name="username"
+                    render={({ field }) => (
+                      <FormItem>
+                        <div className="relative">
+                          <User className="absolute left-3 top-3 text-gray-400" size={18} />
+                          <FormControl>
+                            <Input
+                              {...field}
+                              placeholder="Username"
+                              className="h-12 bg-white/5 border-white/10 pl-10"
+                            />
+                          </FormControl>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={signupForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-3 text-gray-400" size={18} />
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type="email"
+                              placeholder="Email"
+                              className="h-12 bg-white/5 border-white/10 pl-10"
+                            />
+                          </FormControl>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={signupForm.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-3 text-gray-400" size={18} />
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type={showSignupPassword ? "text" : "password"}
+                              placeholder="Password"
+                              className="h-12 bg-white/5 border-white/10 pl-10 pr-10"
+                            />
+                          </FormControl>
+                          <button
+                            type="button"
+                            className="absolute right-3 top-3 text-gray-400"
+                            onClick={() => setShowSignupPassword(!showSignupPassword)}
+                          >
+                            {showSignupPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                          </button>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="text-sm text-gray-400">
+                    By signing up, you agree to our <Link to="/terms" className="text-aura-blue hover:underline">Terms of Service</Link> and <Link to="/privacy" className="text-aura-blue hover:underline">Privacy Policy</Link>,
+                    and confirm that you are at least 18 years old.
+                  </div>
+                  
+                  <Button type="submit" variant="gradient" className="w-full h-12 btn-pulse">
+                    SIGN UP
+                  </Button>
+                </form>
+              </Form>
+              
+              <div className="relative flex items-center justify-center mt-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-700"></div>
+                </div>
+                <div className="relative px-4 bg-aura-darkPurple text-sm text-gray-400">
+                  or continue with
+                </div>
+              </div>
+              
+              <div className="flex flex-col gap-3 mt-6">
+                <Button variant="outline" className="w-full h-12 border-white/20 hover:bg-white/5">
+                  Continue with Google
+                </Button>
+                <Button variant="outline" className="w-full h-12 border-white/20 hover:bg-white/5">
+                  <Facebook className="mr-2" size={18} /> Continue with Facebook
+                </Button>
+                <Button variant="outline" className="w-full h-12 border-white/20 hover:bg-white/5">
+                  <Twitter className="mr-2" size={18} /> Continue with Twitter
+                </Button>
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
