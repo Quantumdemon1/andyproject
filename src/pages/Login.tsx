@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link, useNavigate } from "react-router-dom";
@@ -12,6 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from "@/component
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+
 const loginSchema = z.object({
   email: z.string().email({
     message: "Please enter a valid email address"
@@ -20,6 +21,7 @@ const loginSchema = z.object({
     message: "Password must be at least 6 characters"
   })
 });
+
 const signupSchema = z.object({
   email: z.string().email({
     message: "Please enter a valid email address"
@@ -31,18 +33,27 @@ const signupSchema = z.object({
     message: "Username must be at least 3 characters"
   })
 });
+
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showSignupPassword, setShowSignupPassword] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
   const {
     signIn,
-    signUp
+    signUp,
+    user
   } = useAuth();
   const navigate = useNavigate();
   const {
     toast
   } = useToast();
+
+  useEffect(() => {
+    if (user) {
+      navigate("/home");
+    }
+  }, [user, navigate]);
+
   const loginForm = useForm({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -50,6 +61,7 @@ const Login = () => {
       password: ""
     }
   });
+
   const signupForm = useForm({
     resolver: zodResolver(signupSchema),
     defaultValues: {
@@ -58,6 +70,7 @@ const Login = () => {
       username: ""
     }
   });
+
   const handleLogin = async (data: z.infer<typeof loginSchema>) => {
     try {
       const {
@@ -71,7 +84,13 @@ const Login = () => {
         });
         return;
       }
-      navigate("/");
+      
+      toast({
+        title: "Login successful",
+        description: "Welcome back!"
+      });
+      
+      navigate("/home");
     } catch (error: any) {
       toast({
         title: "Login failed",
@@ -80,6 +99,7 @@ const Login = () => {
       });
     }
   };
+
   const handleSignup = async (data: z.infer<typeof signupSchema>) => {
     try {
       const {
@@ -93,11 +113,14 @@ const Login = () => {
         });
         return;
       }
+      
       toast({
         title: "Account created",
-        description: "Your account has been created successfully."
+        description: "Your account has been created successfully. You can now log in."
       });
+      
       setActiveTab("login");
+      loginForm.setValue("email", data.email);
     } catch (error: any) {
       toast({
         title: "Signup failed",
@@ -106,8 +129,8 @@ const Login = () => {
       });
     }
   };
+
   return <div className="flex min-h-screen bg-aura-darkPurple">
-      {/* Left side - Banner */}
       <div className="hidden lg:flex lg:flex-1 bg-aura-blue relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-radial from-aura-blue/80 to-purple-800/90"></div>
         
@@ -121,7 +144,6 @@ const Login = () => {
         </div>
       </div>
       
-      {/* Right side - Auth form */}
       <div className="w-full lg:w-1/2 p-6 sm:p-10 flex items-center justify-center">
         <div className="w-full max-w-md space-y-6">
           <Tabs defaultValue="login" value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -261,13 +283,13 @@ const Login = () => {
               </div>
               
               <div className="flex flex-col gap-3 mt-6">
-                <Button variant="outline" className="">
+                <Button variant="outline" className="w-full h-12 btn-pulse text-zinc-950">
                   Continue with Google
                 </Button>
-                <Button variant="outline" className="w-full h-12 border-white/20 hover:bg-white/5">
+                <Button variant="outline" className="w-full h-12 btn-pulse text-zinc-950">
                   <Facebook className="mr-2" size={18} /> Continue with Facebook
                 </Button>
-                <Button variant="outline" className="w-full h-12 border-white/20 hover:bg-white/5">
+                <Button variant="outline" className="w-full h-12 btn-pulse text-zinc-950">
                   <Twitter className="mr-2" size={18} /> Continue with Twitter
                 </Button>
               </div>
@@ -277,4 +299,5 @@ const Login = () => {
       </div>
     </div>;
 };
+
 export default Login;

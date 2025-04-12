@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Messages from "./pages/Messages";
@@ -19,6 +19,7 @@ import NotFound from "./pages/NotFound";
 import AdminPanel from "./pages/Admin";
 import CreatorDashboard from "./pages/CreatorDashboard";
 import ForgotPassword from "./pages/ForgotPassword";
+import PrivateRoute from "./components/PrivateRoute";
 
 const queryClient = new QueryClient();
 
@@ -30,20 +31,25 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/messages" element={<Messages />} />
-            <Route path="/notifications" element={<Notifications />} />
-            <Route path="/collections" element={<Collections />} />
-            <Route path="/vault" element={<Vault />} />
-            <Route path="/queue" element={<Queue />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/discover" element={<Discover />} />
-            <Route path="/more" element={<More />} />
+            {/* Make login page the default route */}
+            <Route path="/" element={<Navigate to="/login" />} />
             <Route path="/login" element={<Login />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/admin" element={<AdminPanel />} />
-            <Route path="/creator" element={<CreatorDashboard />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+
+            {/* Protected routes */}
+            <Route path="/home" element={<PrivateRoute><Index /></PrivateRoute>} />
+            <Route path="/messages" element={<PrivateRoute><Messages /></PrivateRoute>} />
+            <Route path="/notifications" element={<PrivateRoute><Notifications /></PrivateRoute>} />
+            <Route path="/collections" element={<PrivateRoute><Collections /></PrivateRoute>} />
+            <Route path="/vault" element={<PrivateRoute><Vault /></PrivateRoute>} />
+            <Route path="/queue" element={<PrivateRoute><Queue /></PrivateRoute>} />
+            <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+            <Route path="/discover" element={<PrivateRoute><Discover /></PrivateRoute>} />
+            <Route path="/more" element={<PrivateRoute><More /></PrivateRoute>} />
+            <Route path="/admin" element={<PrivateRoute><AdminPanel /></PrivateRoute>} />
+            <Route path="/creator" element={<PrivateRoute><CreatorDashboard /></PrivateRoute>} />
+
+            {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
