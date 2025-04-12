@@ -21,7 +21,7 @@ export function UsernameField({ control }: UsernameFieldProps) {
             <Input placeholder="username" {...field} />
           </FormControl>
           <FormDescription>
-            This is your public @username
+            Use 3-30 characters with only letters, numbers, and underscores for your public @username
           </FormDescription>
           <FormMessage />
         </FormItem>
