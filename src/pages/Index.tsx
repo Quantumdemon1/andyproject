@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 
 const SidebarContent = () => (
   <div className="space-y-6">
@@ -67,8 +68,9 @@ const SidebarContent = () => (
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
 
-  // Enhanced creator data with more realistic details
+  // Enhanced creator data with more realistic details and additional properties
   const creators = [
     {
       id: "1",
@@ -77,6 +79,11 @@ const Index = () => {
       description: "Nature photographer capturing landscapes and wildlife in their natural habitats.",
       imageUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop&crop=faces&q=80",
       price: "5.99",
+      isVerified: true,
+      tier: "Premium" as const,
+      followers: 12500,
+      category: "Photography",
+      rating: 4.8
     },
     {
       id: "2",
@@ -86,6 +93,11 @@ const Index = () => {
       imageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=faces&q=80",
       isSubscribed: true,
       price: "7.99",
+      isVerified: false,
+      tier: "Basic" as const,
+      followers: 8900,
+      category: "Art",
+      rating: 4.5
     },
     {
       id: "3",
@@ -94,6 +106,11 @@ const Index = () => {
       description: "Graphic designer and illustrator creating minimalist designs and custom logos.",
       imageUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=400&fit=crop&crop=faces&q=80",
       price: "4.99",
+      isVerified: true,
+      tier: "Premium" as const,
+      followers: 15200,
+      category: "Design",
+      rating: 4.9
     },
     {
       id: "4",
@@ -102,6 +119,11 @@ const Index = () => {
       description: "Fashion photographer working with top models and clothing brands globally.",
       imageUrl: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400&h=400&fit=crop&crop=faces&q=80",
       price: "9.99",
+      isVerified: true,
+      tier: "Premium" as const,
+      followers: 23600,
+      category: "Photography",
+      rating: 4.7
     },
     {
       id: "5",
@@ -110,6 +132,11 @@ const Index = () => {
       description: "Watercolor artist creating delicate landscapes and botanical illustrations.",
       imageUrl: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=400&fit=crop&crop=faces&q=80",
       price: "6.99",
+      isVerified: false,
+      tier: "Basic" as const,
+      followers: 7400,
+      category: "Art",
+      rating: 4.4
     },
     {
       id: "6",
@@ -118,13 +145,27 @@ const Index = () => {
       description: "Filmmaker and photographer specializing in cinematic storytelling.",
       imageUrl: "https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?w=400&h=400&fit=crop&crop=faces&q=80",
       price: "8.99",
+      isVerified: false,
+      tier: "Basic" as const,
+      followers: 10300,
+      category: "Video",
+      rating: 4.6
     },
   ];
 
-  // Filter creators based on the selected tab
-  const filteredCreators = activeTab === "purchased" 
-    ? creators.filter(creator => creator.isSubscribed) 
-    : creators;
+  // Get unique categories for filtering
+  const categories = Array.from(new Set(creators.map(creator => creator.category)));
+
+  // Filter creators based on the selected tab and category
+  const filteredCreators = creators.filter(creator => {
+    // First filter by tab (purchased/all)
+    const tabFilter = activeTab === "purchased" ? creator.isSubscribed : true;
+    
+    // Then filter by category if one is selected
+    const catFilter = categoryFilter ? creator.category === categoryFilter : true;
+    
+    return tabFilter && catFilter;
+  });
 
   return (
     <MainLayout title="HOME" icons searchBar rightSidebar={<SidebarContent />}>
@@ -200,11 +241,33 @@ const Index = () => {
           </Button>
         </div>
         
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold">Discover Creators</h2>
           <Button variant="outline" size="sm" className="border-aura-blue/50 text-aura-blue hover:bg-aura-blue/10">
             View All
           </Button>
+        </div>
+        
+        {/* Category filter badges */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          <Badge 
+            variant={categoryFilter === null ? "default" : "outline"} 
+            className={`cursor-pointer ${categoryFilter === null ? '' : 'hover:bg-white/5'}`} 
+            onClick={() => setCategoryFilter(null)}
+          >
+            All Categories
+          </Badge>
+          
+          {categories.map((category) => (
+            <Badge
+              key={category}
+              variant={categoryFilter === category ? "default" : "outline"}
+              className={`cursor-pointer ${categoryFilter === category ? '' : 'hover:bg-white/5'}`}
+              onClick={() => setCategoryFilter(category)}
+            >
+              {category}
+            </Badge>
+          ))}
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -217,9 +280,20 @@ const Index = () => {
               imageUrl={creator.imageUrl}
               isSubscribed={creator.isSubscribed}
               price={creator.price}
+              isVerified={creator.isVerified}
+              tier={creator.tier}
+              followers={creator.followers}
+              category={creator.category}
+              rating={creator.rating}
             />
           ))}
         </div>
+        
+        {filteredCreators.length === 0 && (
+          <div className="text-center p-8 bg-white/5 rounded-lg border border-white/10">
+            <p className="text-gray-400">No creators found matching your filters.</p>
+          </div>
+        )}
       </div>
     </MainLayout>
   );
