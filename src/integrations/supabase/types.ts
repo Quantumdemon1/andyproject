@@ -138,6 +138,7 @@ export type Database = {
       user_profiles: {
         Row: {
           avatar_url: string | null
+          cover_url: string | null
           id: string
           is_online: boolean | null
           last_seen: string | null
@@ -145,6 +146,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          cover_url?: string | null
           id: string
           is_online?: boolean | null
           last_seen?: string | null
@@ -152,6 +154,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          cover_url?: string | null
           id?: string
           is_online?: boolean | null
           last_seen?: string | null
