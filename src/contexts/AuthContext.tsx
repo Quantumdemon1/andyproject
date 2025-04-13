@@ -1,22 +1,18 @@
 
-import React, { createContext, useState, useEffect, useContext } from "react";
+import React, { createContext, useContext } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
+import { useAuthState } from "@/hooks/useAuthState";
+import { determineUserRole, AuthResult, SignUpResult } from "@/utils/authUtils";
 
 interface AuthContextType {
   session: Session | null;
   user: User | null;
   loading: boolean;
   userRole: 'admin' | 'user' | null;
-  signIn: (email: string, password: string) => Promise<{
-    error: Error | null;
-    data: Session | null;
-  }>;
-  signUp: (email: string, password: string, username?: string) => Promise<{
-    error: Error | null;
-    data: { user: User | null; session: Session | null };
-  }>;
+  signIn: (email: string, password: string) => Promise<AuthResult<Session>>;
+  signUp: (email: string, password: string, username?: string) => Promise<AuthResult<SignUpResult>>;
   signOut: () => Promise<void>;
   updateUserPresence: (isOnline: boolean) => Promise<void>;
 }
@@ -26,75 +22,11 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
   children 
 }) => {
-  const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [userRole, setUserRole] = useState<'admin' | 'user' | null>(null);
+  // Use the refactored auth state hook
+  const { session, user, loading, userRole } = useAuthState();
 
-  // Helper function to determine user role
-  const determineUserRole = (email: string | undefined): 'admin' | 'user' | null => {
-    if (!email) return null;
-    if (email === 'admin@example.com') return 'admin';
-    return 'user';
-  };
-
-  useEffect(() => {
-    console.log("Auth state changed:", session?.user?.email);
-    
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log("Auth state changed:", event, session?.user?.email);
-        setSession(session);
-        setUser(session?.user ?? null);
-        setUserRole(determineUserRole(session?.user?.email));
-        
-        // Update user presence when auth state changes
-        if (session?.user) {
-          // Use setTimeout to avoid recursive calls
-          setTimeout(() => {
-            updateUserPresence(true);
-          }, 0);
-        }
-      }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log("Initial session check:", session?.user?.email);
-      setSession(session);
-      setUser(session?.user ?? null);
-      setUserRole(determineUserRole(session?.user?.email));
-      
-      if (session?.user) {
-        updateUserPresence(true);
-      }
-      
-      setLoading(false);
-    });
-
-    // Update presence when window focus changes
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible" && user) {
-        updateUserPresence(true);
-      } else if (document.visibilityState === "hidden" && user) {
-        updateUserPresence(false);
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    // Cleanup
-    return () => {
-      subscription.unsubscribe();
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      if (user) {
-        updateUserPresence(false);
-      }
-    };
-  }, [user]);
-
-  const signIn = async (email: string, password: string) => {
+  // Sign in functionality
+  const signIn = async (email: string, password: string): Promise<AuthResult<Session>> => {
     try {
       console.log("Signing in with:", email);
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -114,9 +46,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       
       console.log("Sign in successful:", data.user?.email);
       
-      // Set user role based on email
-      setUserRole(determineUserRole(data.user?.email));
-      
       toast({
         title: "Welcome back!",
         description: `You've successfully signed in as ${determineUserRole(data.user?.email)}`,
@@ -134,7 +63,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const signUp = async (email: string, password: string, username?: string) => {
+  // Sign up functionality
+  const signUp = async (email: string, password: string, username?: string): Promise<AuthResult<SignUpResult>> => {
     try {
       console.log("Signing up with:", email);
       
@@ -161,9 +91,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
       
       console.log("Sign up successful:", data.user?.email);
-      
-      // Set user role based on email during signup
-      setUserRole(determineUserRole(data.user?.email));
       
       // Check if email confirmation is required
       if (data.session === null) {
@@ -193,13 +120,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  // Sign out functionality
   const signOut = async () => {
     if (user) {
       await updateUserPresence(false);
     }
     
     await supabase.auth.signOut();
-    setUserRole(null);
     
     toast({
       title: "Signed out",
@@ -207,6 +134,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   };
 
+  // User presence update
   const updateUserPresence = async (isOnline: boolean) => {
     if (!user) return;
 
