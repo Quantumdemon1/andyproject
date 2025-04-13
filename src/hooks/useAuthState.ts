@@ -1,9 +1,8 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { determineUserRole, isDirectAccessEnabled } from "@/utils/authUtils";
-import { useUserPresence } from "./useUserPresence";
 
 /**
  * Hook to manage authentication state
@@ -14,8 +13,32 @@ export const useAuthState = () => {
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<'admin' | 'user' | null>(null);
 
-  // Import user presence functionality
-  const { updateUserPresence } = useUserPresence(user);
+  // User presence update function
+  const updateUserPresence = useCallback(async (isOnline: boolean) => {
+    if (!user) return;
+
+    // Skip DB updates in direct access mode
+    if (isDirectAccessEnabled() || user.id === 'direct-access-user') {
+      console.log("Direct access mode: skipping presence update");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("user_profiles")
+        .update({ 
+          is_online: isOnline,
+          last_seen: new Date().toISOString()
+        })
+        .eq("id", user.id);
+
+      if (error) {
+        console.error("Error updating user presence:", error);
+      }
+    } catch (error) {
+      console.error("Error updating user presence:", error);
+    }
+  }, [user]);
 
   useEffect(() => {
     console.log("Auth state changed:", session?.user?.email);
@@ -74,10 +97,38 @@ export const useAuthState = () => {
     };
   }, [updateUserPresence]);
 
+  // Set up visibility change handlers
+  useEffect(() => {
+    // Skip in direct access mode
+    if (isDirectAccessEnabled() || !user || user.id === 'direct-access-user') {
+      return;
+    }
+    
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && user) {
+        updateUserPresence(true);
+      } else if (document.visibilityState === "hidden" && user) {
+        updateUserPresence(false);
+      }
+    };
+
+    // Add listener for visibility changes
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    // Clean up on unmount
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      if (user) {
+        updateUserPresence(false);
+      }
+    };
+  }, [user, updateUserPresence]);
+
   return {
     session,
     user,
     loading,
     userRole,
+    updateUserPresence,
   };
 };

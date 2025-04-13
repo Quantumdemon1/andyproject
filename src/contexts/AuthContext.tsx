@@ -23,7 +23,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children 
 }) => {
   // Use the refactored auth state hook
-  const { session, user, loading, userRole } = useAuthState();
+  const { session, user, loading, userRole, updateUserPresence } = useAuthState();
 
   // Sign in functionality
   const signIn = async (email: string, password: string): Promise<AuthResult<Session>> => {
@@ -132,27 +132,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       title: "Signed out",
       description: "You've been signed out successfully.",
     });
-  };
-
-  // User presence update
-  const updateUserPresence = async (isOnline: boolean) => {
-    if (!user) return;
-
-    try {
-      const { error } = await supabase
-        .from("user_profiles")
-        .update({ 
-          is_online: isOnline,
-          last_seen: new Date().toISOString()
-        })
-        .eq("id", user.id);
-
-      if (error) {
-        console.error("Error updating user presence:", error);
-      }
-    } catch (error) {
-      console.error("Error updating user presence:", error);
-    }
   };
 
   return (
