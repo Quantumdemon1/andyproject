@@ -19,6 +19,8 @@ import NotFound from "./pages/NotFound";
 import AdminPanel from "./pages/Admin";
 import CreatorDashboard from "./pages/CreatorDashboard";
 import ForgotPassword from "./pages/ForgotPassword";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import PrivateRoute from "./components/PrivateRoute";
 
 const queryClient = new QueryClient();
@@ -46,6 +48,12 @@ const App = () => (
             <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
             <Route path="/discover" element={<PrivateRoute><Discover /></PrivateRoute>} />
             <Route path="/more" element={<PrivateRoute><More /></PrivateRoute>} />
+            
+            {/* Payment and subscription success routes */}
+            <Route path="/purchase-success" element={<PrivateRoute><PaymentSuccess /></PrivateRoute>} />
+            <Route path="/subscription-success" element={<PrivateRoute><SubscriptionSuccess /></PrivateRoute>} />
+            <Route path="/purchase-canceled" element={<PrivateRoute><Navigate to="/home" /></PrivateRoute>} />
+            <Route path="/subscription-canceled" element={<PrivateRoute><Navigate to="/home" /></PrivateRoute>} />
             
             {/* Admin-only routes */}
             <Route path="/admin" element={

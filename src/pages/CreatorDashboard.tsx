@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/MainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -9,13 +8,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { 
   Upload, Image as ImageIcon, Video, FileText, Paintbrush, 
   TrendingUp, DollarSign, Users, MessageSquare, Settings, 
-  ChevronRight, PlusCircle
+  ChevronRight, PlusCircle, CreditCard, BanknoteIcon
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import BankAccountForm from "@/components/stripe/BankAccountForm";
+import BankAccountsList from "@/components/stripe/BankAccountsList";
+import StripeConnect from "@/components/stripe/StripeConnect";
 
 interface AnalyticItem {
   label: string;
@@ -41,8 +44,8 @@ const CreatorDashboard = () => {
   const [subscriptionPrice, setSubscriptionPrice] = useState("9.99");
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  const [showBankModal, setShowBankModal] = useState(false);
   
-  // Mock data
   const analyticItems: AnalyticItem[] = [
     {
       label: "Subscribers",
@@ -100,7 +103,6 @@ const CreatorDashboard = () => {
   ];
   
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Only allow numbers and a decimal point
     const value = e.target.value.replace(/[^0-9.]/g, '');
     setSubscriptionPrice(value);
   };
@@ -171,7 +173,7 @@ const CreatorDashboard = () => {
         </div>
         
         <Tabs defaultValue="upload" className="mb-8">
-          <TabsList className="grid grid-cols-4 mb-4">
+          <TabsList className="grid grid-cols-5 mb-4">
             <TabsTrigger value="upload">
               <Upload size={16} className="mr-2" /> Upload
             </TabsTrigger>
@@ -180,6 +182,9 @@ const CreatorDashboard = () => {
             </TabsTrigger>
             <TabsTrigger value="analytics">
               <TrendingUp size={16} className="mr-2" /> Analytics
+            </TabsTrigger>
+            <TabsTrigger value="payments">
+              <CreditCard size={16} className="mr-2" /> Payments
             </TabsTrigger>
             <TabsTrigger value="settings">
               <Settings size={16} className="mr-2" /> Settings
@@ -378,6 +383,78 @@ const CreatorDashboard = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+          
+          <TabsContent value="payments">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Connect with Stripe</CardTitle>
+                    <CardDescription>
+                      Set up your payment processing to receive funds
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <StripeConnect />
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <div>
+                      <CardTitle>Bank Accounts</CardTitle>
+                      <CardDescription>
+                        Manage your connected bank accounts
+                      </CardDescription>
+                    </div>
+                    <Dialog open={showBankModal} onOpenChange={setShowBankModal}>
+                      <DialogTrigger asChild>
+                        <Button size="sm">
+                          <PlusCircle size={16} className="mr-2" />
+                          Add Account
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
+                          <DialogTitle>Add Bank Account</DialogTitle>
+                          <DialogDescription>
+                            Enter your bank account details to receive payments
+                          </DialogDescription>
+                        </DialogHeader>
+                        <BankAccountForm />
+                      </DialogContent>
+                    </Dialog>
+                  </CardHeader>
+                  <CardContent>
+                    <BankAccountsList />
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Payment History</CardTitle>
+                    <CardDescription>
+                      Your recent payments and transactions
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-center h-40 text-muted-foreground">
+                      <div className="text-center">
+                        <BanknoteIcon size={32} className="mx-auto mb-2 opacity-50" />
+                        <p>No transactions yet</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                  <CardFooter className="flex justify-between">
+                    <Button variant="outline" size="sm">View all transactions</Button>
+                    <span className="text-xs text-muted-foreground">Updated just now</span>
+                  </CardFooter>
+                </Card>
+              </div>
+            </div>
           </TabsContent>
           
           <TabsContent value="settings">

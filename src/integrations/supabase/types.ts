@@ -9,6 +9,84 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      art_purchases: {
+        Row: {
+          amount: number
+          artwork_name: string
+          artwork_url: string | null
+          buyer_id: string
+          created_at: string
+          id: string
+          seller_id: string | null
+          status: string
+          stripe_payment_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          artwork_name: string
+          artwork_url?: string | null
+          buyer_id: string
+          created_at?: string
+          id?: string
+          seller_id?: string | null
+          status?: string
+          stripe_payment_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          artwork_name?: string
+          artwork_url?: string | null
+          buyer_id?: string
+          created_at?: string
+          id?: string
+          seller_id?: string | null
+          status?: string
+          stripe_payment_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      bank_accounts: {
+        Row: {
+          account_holder_name: string
+          account_last4: string
+          account_type: string
+          bank_name: string | null
+          created_at: string
+          id: string
+          is_primary: boolean | null
+          is_verified: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_holder_name: string
+          account_last4: string
+          account_type: string
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          is_primary?: boolean | null
+          is_verified?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_holder_name?: string
+          account_last4?: string
+          account_type?: string
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          is_primary?: boolean | null
+          is_verified?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       conversation_participants: {
         Row: {
           conversation_id: string
@@ -134,6 +212,75 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      stripe_accounts: {
+        Row: {
+          account_link_url: string | null
+          created_at: string
+          id: string
+          is_onboarded: boolean | null
+          stripe_account_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_link_url?: string | null
+          created_at?: string
+          id?: string
+          is_onboarded?: boolean | null
+          stripe_account_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_link_url?: string | null
+          created_at?: string
+          id?: string
+          is_onboarded?: boolean | null
+          stripe_account_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          created_at: string
+          creator_id: string | null
+          end_date: string | null
+          id: string
+          price: number
+          start_date: string
+          status: string
+          stripe_subscription_id: string | null
+          subscriber_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id?: string | null
+          end_date?: string | null
+          id?: string
+          price: number
+          start_date?: string
+          status?: string
+          stripe_subscription_id?: string | null
+          subscriber_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string | null
+          end_date?: string | null
+          id?: string
+          price?: number
+          start_date?: string
+          status?: string
+          stripe_subscription_id?: string | null
+          subscriber_id?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       user_profiles: {
         Row: {
