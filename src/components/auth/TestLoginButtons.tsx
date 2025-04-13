@@ -79,11 +79,11 @@ const TestLoginButtons: React.FC<TestLoginButtonsProps> = ({
           variant: "default"
         });
         
-        // Short timeout to allow toast to be seen
-        setTimeout(() => {
-          navigate('/home');
-        }, 500);
+        // Set direct access flag in session storage
+        sessionStorage.setItem('direct_access', 'true');
         
+        // Navigate to home page immediately
+        navigate('/home');
         return;
       }
       
