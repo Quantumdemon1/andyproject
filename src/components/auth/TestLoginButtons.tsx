@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react"; 
+import { supabase } from "@/integrations/supabase/client";
 
 interface TestLoginButtonsProps {
   onTestLogin: (role: 'admin' | 'user') => Promise<void>;
@@ -14,12 +15,69 @@ const TestLoginButtons: React.FC<TestLoginButtonsProps> = ({
   const [testAccountLoading, setTestAccountLoading] = useState<'admin' | 'user' | null>(null);
   const { toast } = useToast();
   
+  // Function to ensure test accounts exist
+  const ensureTestAccountExists = async (email: string, password: string) => {
+    try {
+      // Try to sign in first to check if account exists
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      // If sign in succeeds, the account exists
+      if (!signInError) {
+        // Sign out to reset the state for clean test login
+        await supabase.auth.signOut();
+        return;
+      }
+      
+      // If error is not "Invalid login credentials", throw it
+      if (signInError.message !== "Invalid login credentials") {
+        throw signInError;
+      }
+      
+      // If we get here, account doesn't exist, so create it
+      const { error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            username: email.split('@')[0],
+          }
+        }
+      });
+      
+      if (signUpError) {
+        throw signUpError;
+      }
+      
+      // Sign out in case auto-signin happened
+      await supabase.auth.signOut();
+      
+      toast({
+        title: "Test account created",
+        description: `Created ${email} account successfully.`,
+      });
+    } catch (error) {
+      console.error("Error ensuring test account exists:", error);
+      throw error;
+    }
+  };
+  
   const handleTestLogin = async (role: 'admin' | 'user') => {
     try {
       setTestAccountLoading(role);
+      
+      // Determine email based on role
+      const email = role === 'admin' ? 'admin@example.com' : 'user@example.com';
+      const password = 'password123';
+      
+      // Ensure the account exists
+      await ensureTestAccountExists(email, password);
+      
+      // Now proceed with login
       await onTestLogin(role);
       
-      // Show success toast
       toast({
         title: "Login successful",
         description: `You are now logged in as ${role}`,
