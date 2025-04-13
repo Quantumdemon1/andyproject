@@ -2,6 +2,7 @@
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useCallback } from "react";
+import { isDirectAccessEnabled } from "@/utils/authUtils";
 
 /**
  * Hook to manage user presence state in the database
@@ -12,6 +13,12 @@ export const useUserPresence = (user: User | null) => {
    */
   const updateUserPresence = useCallback(async (isOnline: boolean) => {
     if (!user) return;
+    
+    // Skip DB updates in direct access mode
+    if (isDirectAccessEnabled() || user.id === 'direct-access-user') {
+      console.log("Direct access mode: skipping presence update");
+      return;
+    }
 
     try {
       const { error } = await supabase
@@ -32,6 +39,11 @@ export const useUserPresence = (user: User | null) => {
 
   // Set up visibility change handlers
   useEffect(() => {
+    // Skip in direct access mode
+    if (isDirectAccessEnabled() || !user || user.id === 'direct-access-user') {
+      return;
+    }
+    
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible" && user) {
         updateUserPresence(true);

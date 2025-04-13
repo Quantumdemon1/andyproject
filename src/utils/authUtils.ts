@@ -26,3 +26,11 @@ export interface SignUpResult {
   user: User | null;
   session: any;
 }
+
+/**
+ * Check if user is authenticated for direct access mode
+ * This is used for development/testing without requiring full authentication
+ */
+export const isDirectAccessEnabled = (): boolean => {
+  return sessionStorage.getItem('direct_access') === 'true';
+};

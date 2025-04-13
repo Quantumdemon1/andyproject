@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { determineUserRole } from "@/utils/authUtils";
+import { determineUserRole, isDirectAccessEnabled } from "@/utils/authUtils";
 import { useUserPresence } from "./useUserPresence";
 
 /**
@@ -20,7 +20,23 @@ export const useAuthState = () => {
   useEffect(() => {
     console.log("Auth state changed:", session?.user?.email);
     
-    // Set up auth state listener FIRST
+    // Check for direct access mode first
+    if (isDirectAccessEnabled()) {
+      console.log("Direct access mode detected, setting user as regular user");
+      // Create a mock user for direct access mode
+      const mockUser = {
+        id: 'direct-access-user',
+        email: 'user@example.com',
+        role: 'user'
+      } as unknown as User;
+      
+      setUser(mockUser);
+      setUserRole('user');
+      setLoading(false);
+      return;
+    }
+    
+    // Set up auth state listener for normal auth flow
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log("Auth state changed:", event, session?.user?.email);
