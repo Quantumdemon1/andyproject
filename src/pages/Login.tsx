@@ -83,7 +83,7 @@ const Login = () => {
         throw new Error(error.message);
       }
       
-      // Success toast is handled in useEffect when redirect happens
+      // Success toast and navigation is handled in the AuthContext and useEffect
     } catch (error: any) {
       throw error; // Let the TestLoginButtons component handle the error
     }
