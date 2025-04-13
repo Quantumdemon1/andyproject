@@ -9,7 +9,7 @@ import { Loader2 } from "lucide-react";
 interface SubscribeButtonProps {
   creatorId: string;
   price: number;
-  variant?: "default" | "outline" | "secondary" | "ghost" | "link" | "destructive";
+  variant?: "default" | "outline" | "secondary" | "ghost" | "link" | "destructive" | "subscribe";
   size?: "default" | "sm" | "lg" | "icon";
   className?: string;
 }
@@ -17,7 +17,7 @@ interface SubscribeButtonProps {
 const SubscribeButton = ({ 
   creatorId, 
   price, 
-  variant = "default", 
+  variant = "subscribe", 
   size = "default",
   className 
 }: SubscribeButtonProps) => {
@@ -46,6 +46,7 @@ const SubscribeButton = ({
 
     try {
       setLoading(true);
+      console.log("Creating checkout session for subscription to creator:", creatorId);
       
       const { data, error } = await supabase.functions.invoke("create-checkout", {
         body: {
@@ -55,9 +56,13 @@ const SubscribeButton = ({
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Subscription error:", error);
+        throw error;
+      }
       
       if (data?.url) {
+        console.log("Redirecting to checkout:", data.url);
         window.location.href = data.url;
       } else {
         throw new Error("Failed to get checkout URL");

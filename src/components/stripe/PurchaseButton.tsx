@@ -50,6 +50,7 @@ const PurchaseButton = ({
 
     try {
       setLoading(true);
+      console.log("Creating checkout session for purchasing:", artworkName);
       
       const { data, error } = await supabase.functions.invoke("create-checkout", {
         body: {
@@ -61,9 +62,13 @@ const PurchaseButton = ({
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Purchase error:", error);
+        throw error;
+      }
       
       if (data?.url) {
+        console.log("Redirecting to checkout:", data.url);
         window.location.href = data.url;
       } else {
         throw new Error("Failed to get checkout URL");

@@ -30,9 +30,15 @@ const StripeConnect = () => {
 
     try {
       setLoading(true);
+      console.log("Checking Stripe account status...");
       const { data, error } = await supabase.functions.invoke("check-stripe-account", {});
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error checking Stripe account:", error);
+        throw error;
+      }
+      
+      console.log("Stripe account status:", data);
       setAccountStatus(data);
     } catch (error) {
       console.error("Error checking Stripe account:", error);
@@ -64,10 +70,16 @@ const StripeConnect = () => {
 
     try {
       setConnecting(true);
+      console.log("Creating Stripe connect account...");
       const { data, error } = await supabase.functions.invoke("create-stripe-account", {});
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error connecting to Stripe:", error);
+        throw error;
+      }
+      
       if (data?.url) {
+        console.log("Redirecting to Stripe connect:", data.url);
         window.location.href = data.url;
       } else {
         throw new Error("Failed to get Stripe connect URL");
