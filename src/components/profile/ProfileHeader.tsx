@@ -17,7 +17,7 @@ const ProfileHeader = ({ profile, user }: ProfileHeaderProps) => {
   
   return (
     <CoverPhoto 
-      userId={user?.id} 
+      userId={user?.id || profile?.id || 'demo-user'} 
       coverUrl={coverUrl} 
       onCoverPhotoChange={handleCoverPhotoChange}
     />

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/MainLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -28,27 +29,64 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
   
+  // Create a fallback profile for direct access mode
+  const fallbackProfile: UserProfile = {
+    id: 'demo-user',
+    username: 'demo_user',
+    avatar_url: null,
+    display_name: 'Demo User',
+    bio: 'This is a demo profile since you are in direct access mode.',
+    tags: 'demo,preview,testing',
+    is_online: true
+  };
+  
   useEffect(() => {
     async function fetchProfile() {
-      if (!user) return;
-      
       try {
-        const { data, error } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-          
-        if (error) throw error;
+        // Check if in direct access mode (no authentication)
+        const hasDirectAccess = sessionStorage.getItem('direct_access') === 'true';
         
-        setProfile(data);
+        if (!user && !hasDirectAccess) {
+          // If not in direct access and no user, we still want to show something
+          setTimeout(() => {
+            setProfile(fallbackProfile);
+            setLoading(false);
+          }, 500); // Small timeout to avoid flickering
+          return;
+        }
+        
+        if (!user && hasDirectAccess) {
+          // In direct access mode with no user, use fallback profile
+          setProfile(fallbackProfile);
+          setLoading(false);
+          return;
+        }
+        
+        if (user) {
+          // If we have a real user, fetch their profile
+          const { data, error } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+            
+          if (error) {
+            console.error('Error fetching profile:', error);
+            // If there's an error fetching the profile, still show something
+            setProfile(fallbackProfile);
+          } else {
+            setProfile(data);
+          }
+        }
       } catch (error) {
-        console.error('Error fetching profile:', error);
+        console.error('Error in profile fetch:', error);
         toast({
           title: "Error",
           description: "Failed to load profile information",
           variant: "destructive",
         });
+        // On error, use fallback profile
+        setProfile(fallbackProfile);
       } finally {
         setLoading(false);
       }
