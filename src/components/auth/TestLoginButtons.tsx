@@ -72,6 +72,9 @@ const TestLoginButtons: React.FC<TestLoginButtonsProps> = ({
       
       // For user role, bypass authentication and go directly to home
       if (role === 'user') {
+        // Set direct access flag in session storage
+        sessionStorage.setItem('direct_access', 'true');
+        
         // Display success toast
         toast({
           title: "Login successful",
@@ -79,11 +82,8 @@ const TestLoginButtons: React.FC<TestLoginButtonsProps> = ({
           variant: "default"
         });
         
-        // Set direct access flag in session storage
-        sessionStorage.setItem('direct_access', 'true');
-        
-        // Navigate to home page immediately
-        navigate('/home');
+        // Force navigation to home page with a full page reload
+        window.location.href = '/home';
         return;
       }
       

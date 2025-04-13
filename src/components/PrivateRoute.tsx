@@ -18,11 +18,13 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children, requiredRole }) =
     // Check if we have a bypass flag in sessionStorage
     const hasDirectAccess = sessionStorage.getItem('direct_access') === 'true';
     if (hasDirectAccess) {
+      console.log("Direct access enabled, bypassing authentication");
       setBypassAuth(true);
     }
     
     // If we're at the home route and came from login, consider it a direct access
     if (location.pathname === '/home' && document.referrer.includes('/login')) {
+      console.log("Coming from login to home, setting direct access");
       sessionStorage.setItem('direct_access', 'true');
       setBypassAuth(true);
     }
@@ -39,6 +41,7 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children, requiredRole }) =
 
   // Allow access if user is authenticated OR we have bypass
   if (!user && !bypassAuth) {
+    console.log("No user and no bypass, redirecting to login");
     return <Navigate to="/login" replace />;
   }
 
@@ -46,11 +49,13 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children, requiredRole }) =
   if (requiredRole && userRole !== requiredRole && !bypassAuth) {
     // If admin role is required but user isn't admin, redirect to home
     if (requiredRole === 'admin') {
+      console.log("Admin role required but not admin, redirecting to home");
       return <Navigate to="/home" replace />;
     }
   }
 
   // Render children if authenticated and meets role requirements
+  console.log("Access granted to:", location.pathname);
   return <>{children}</>;
 };
 
