@@ -1,7 +1,9 @@
 
 import React from "react";
-import { Search, Calendar, Image, MessageSquare, PlusCircle, ArrowLeft, Settings } from "lucide-react";
+import { Search, Calendar, Image, MessageSquare, PlusCircle, ArrowLeft, Settings, Menu } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface HeaderProps {
   title: string;
@@ -18,15 +20,17 @@ const Header: React.FC<HeaderProps> = ({
   icons = false, 
   settings = false 
 }) => {
+  const isMobile = useIsMobile();
+
   return (
-    <div className="h-16 border-b border-white/10 flex items-center justify-between px-6">
+    <div className={`border-b border-white/10 flex items-center justify-between ${isMobile ? 'h-14 px-4' : 'h-16 px-6'}`}>
       <div className="flex items-center gap-4">
         {backButton && (
           <button className="text-white hover:text-aura-blue transition-colors">
             <ArrowLeft size={22} />
           </button>
         )}
-        <h1 className="text-xl font-semibold">{title}</h1>
+        <h1 className={`font-semibold ${isMobile ? 'text-lg' : 'text-xl'}`}>{title}</h1>
       </div>
       
       <div className="flex items-center gap-3">
@@ -55,6 +59,12 @@ const Header: React.FC<HeaderProps> = ({
               <PlusCircle size={20} />
             </button>
           </div>
+        )}
+        
+        {isMobile && !searchBar && (
+          <Button variant="ghost" size="sm">
+            <Search size={18} />
+          </Button>
         )}
         
         {settings && (

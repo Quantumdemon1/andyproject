@@ -6,6 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
+
 const SidebarContent = () => <div className="space-y-6">
     <Card className="bg-aura-charcoal border-white/10">
       <CardHeader className="w-full bg-gradient-to-r from-aura-blue to-aura-purple hover:from-aura-purple hover:to-aura-blue transition-colors duration-300 text-white py-6">
@@ -61,11 +64,12 @@ const SidebarContent = () => <div className="space-y-6">
       </CardContent>
     </Card>
   </div>;
+
 const Index = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const isMobile = useIsMobile();
 
-  // Enhanced creator data with more realistic details and additional properties
   const creators = [{
     id: "1",
     name: "Emma Johnson",
@@ -141,48 +145,58 @@ const Index = () => {
     rating: 4.6
   }];
 
-  // Get unique categories for filtering
   const categories = Array.from(new Set(creators.map(creator => creator.category)));
 
-  // Filter creators based on the selected tab and category
   const filteredCreators = creators.filter(creator => {
-    // First filter by tab (purchased/all)
     const tabFilter = activeTab === "purchased" ? creator.isSubscribed : true;
-
-    // Then filter by category if one is selected
     const catFilter = categoryFilter ? creator.category === categoryFilter : true;
     return tabFilter && catFilter;
   });
-  return <MainLayout title="HOME" icons searchBar rightSidebar={<SidebarContent />}>
+
+  return (
+    <MainLayout title="HOME" icons={!isMobile} searchBar={!isMobile} rightSidebar={<SidebarContent />}>
       <div>
         <div className="mb-6">
-          <Input className="bg-white/5 border-white/10 focus:border-aura-blue p-6 text-lg placeholder:text-gray-500" placeholder="Compose new post..." />
+          <Input 
+            className={cn(
+              "bg-white/5 border-white/10 focus:border-aura-blue placeholder:text-gray-500",
+              isMobile ? "p-4 text-base" : "p-6 text-lg"
+            )} 
+            placeholder="Compose new post..." 
+          />
           
-          <div className="flex items-center gap-4 mt-4 text-gray-400">
-            <button className="hover:text-white">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-image"><rect width="18" height="18" x="3" y="3" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>
+          <div className={cn(
+            "flex items-center gap-4 mt-4 text-gray-400",
+            isMobile ? "overflow-x-auto pb-2" : ""
+          )}>
+            <button className="hover:text-white flex-shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" width={isMobile ? "20" : "24"} height={isMobile ? "20" : "24"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-image"><rect width="18" height="18" x="3" y="3" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>
             </button>
-            <button className="hover:text-white">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-video"><path d="m22 8-6 4 6 4V8Z" /><rect width="14" height="12" x="2" y="6" rx="2" ry="2" /></svg>
+            <button className="hover:text-white flex-shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" width={isMobile ? "20" : "24"} height={isMobile ? "20" : "24"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-video"><path d="m22 8-6 4 6 4V8Z" /><rect width="14" height="12" x="2" y="6" rx="2" ry="2" /></svg>
             </button>
-            <button className="hover:text-white">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-mic"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><path d="M12 19v3" /><path d="M8 22h8" /></svg>
+            <button className="hover:text-white flex-shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" width={isMobile ? "20" : "24"} height={isMobile ? "20" : "24"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-mic"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><path d="M12 19v3" /><path d="M8 22h8" /></svg>
             </button>
-            <button className="hover:text-white">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-file-text"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /><line x1="16" x2="8" y1="13" y2="13" /><line x1="16" x2="8" y1="17" y2="17" /><line x1="10" x2="8" y1="9" y2="9" /></svg>
-            </button>
-            <button className="hover:text-white">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-list"><line x1="8" x2="21" y1="6" y2="6" /><line x1="8" x2="21" y1="12" y2="12" /><line x1="8" x2="21" y1="18" y2="18" /><line x1="3" x2="3.01" y1="6" y2="6" /><line x1="3" x2="3.01" y1="12" y2="12" /><line x1="3" x2="3.01" y1="18" y2="18" /></svg>
-            </button>
-            <button className="hover:text-white">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-tag"><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z" /><path d="M7 7h.01" /></svg>
-            </button>
-            <button className="hover:text-white">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-at-sign"><circle cx="12" cy="12" r="4" /><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8" /></svg>
-            </button>
-            <button className="hover:text-white">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-type"><polyline points="4 7 4 4 20 4 20 7" /><line x1="9" x2="15" y1="20" y2="20" /><line x1="12" x2="12" y1="4" y2="20" /></svg>
-            </button>
+            {!isMobile && (
+              <>
+                <button className="hover:text-white flex-shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" width={isMobile ? "20" : "24"} height={isMobile ? "20" : "24"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-file-text"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /><line x1="16" x2="8" y1="13" y2="13" /><line x1="16" x2="8" y1="17" y2="17" /><line x1="10" x2="8" y1="9" y2="9" /></svg>
+                </button>
+                <button className="hover:text-white flex-shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" width={isMobile ? "20" : "24"} height={isMobile ? "20" : "24"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-list"><line x1="8" x2="21" y1="6" y2="6" /><line x1="8" x2="21" y1="12" y2="12" /><line x1="8" x2="21" y1="18" y2="18" /><line x1="3" x2="3.01" y1="6" y2="6" /><line x1="3" x2="3.01" y1="12" y2="12" /><line x1="3" x2="3.01" y1="18" y2="18" /></svg>
+                </button>
+                <button className="hover:text-white flex-shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" width={isMobile ? "20" : "24"} height={isMobile ? "20" : "24"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-tag"><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z" /><path d="M7 7h.01" /></svg>
+                </button>
+                <button className="hover:text-white flex-shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" width={isMobile ? "20" : "24"} height={isMobile ? "20" : "24"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-at-sign"><circle cx="12" cy="12" r="4" /><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8" /></svg>
+                </button>
+                <button className="hover:text-white flex-shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" width={isMobile ? "20" : "24"} height={isMobile ? "20" : "24"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-type"><polyline points="4 7 4 4 20 4 20 7" /><line x1="9" x2="15" y1="20" y2="20" /><line x1="12" x2="12" y1="4" y2="20" /></svg>
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -197,14 +211,25 @@ const Index = () => {
           </TabsList>
         </Tabs>
         
-        <div className="flex border border-aura-blue/30 p-3 rounded-lg mb-6 items-center bg-aura-blue/5">
-          <div className="text-aura-blue mr-3">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-info"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></svg>
+        <div className={cn(
+          "flex border border-aura-blue/30 rounded-lg mb-6 items-center bg-aura-blue/5",
+          isMobile ? "p-2 text-xs" : "p-3"
+        )}>
+          <div className={cn(
+            "text-aura-blue",
+            isMobile ? "mr-2" : "mr-3"
+          )}>
+            <svg xmlns="http://www.w3.org/2000/svg" width={isMobile ? "16" : "20"} height={isMobile ? "16" : "20"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-info"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></svg>
           </div>
           <div className="flex-1">
-            <p className="text-sm">Your subscription to <span className="font-semibold">Marcus Lee</span> has expired on Feb 23</p>
+            <p className={cn(
+              isMobile ? "text-xs" : "text-sm"
+            )}>Your subscription to <span className="font-semibold">Marcus Lee</span> has expired on Feb 23</p>
           </div>
-          <Button variant="link" className="text-aura-blue font-normal px-3">
+          <Button variant="link" className={cn(
+            "text-aura-blue font-normal",
+            isMobile ? "px-2 text-xs" : "px-3"
+          )}>
             DISMISS
           </Button>
         </div>
@@ -216,31 +241,60 @@ const Index = () => {
         </div>
         
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold">Discover Creators</h2>
+          <h2 className={cn(
+            "font-bold",
+            isMobile ? "text-xl" : "text-2xl"
+          )}>Discover Creators</h2>
           <Button variant="outline" size="sm" className="border-aura-blue/50 text-aura-blue hover:bg-aura-blue/10">
             View All
           </Button>
         </div>
         
-        {/* Category filter badges */}
-        <div className="flex flex-wrap gap-2 mb-6">
+        <div className={cn(
+          "flex flex-wrap gap-2 mb-6",
+          isMobile ? "overflow-x-auto whitespace-nowrap pb-2" : ""
+        )}>
           <Badge variant={categoryFilter === null ? "default" : "outline"} className={`cursor-pointer ${categoryFilter === null ? '' : 'hover:bg-white/5'}`} onClick={() => setCategoryFilter(null)}>
             All Categories
           </Badge>
           
-          {categories.map(category => <Badge key={category} variant={categoryFilter === category ? "default" : "outline"} className={`cursor-pointer ${categoryFilter === category ? '' : 'hover:bg-white/5'}`} onClick={() => setCategoryFilter(category)}>
+          {categories.map(category => (
+            <Badge key={category} variant={categoryFilter === category ? "default" : "outline"} className={`cursor-pointer ${categoryFilter === category ? '' : 'hover:bg-white/5'}`} onClick={() => setCategoryFilter(category)}>
               {category}
-            </Badge>)}
+            </Badge>
+          ))}
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCreators.map(creator => <CreatorCard key={creator.id} name={creator.name} username={creator.username} description={creator.description} imageUrl={creator.imageUrl} isSubscribed={creator.isSubscribed} price={creator.price} isVerified={creator.isVerified} tier={creator.tier} followers={creator.followers} category={creator.category} rating={creator.rating} />)}
+        <div className={cn(
+          "grid gap-6",
+          isMobile ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+        )}>
+          {filteredCreators.map(creator => (
+            <CreatorCard 
+              key={creator.id} 
+              name={creator.name} 
+              username={creator.username} 
+              description={creator.description} 
+              imageUrl={creator.imageUrl} 
+              isSubscribed={creator.isSubscribed} 
+              price={creator.price} 
+              isVerified={creator.isVerified} 
+              tier={creator.tier} 
+              followers={creator.followers} 
+              category={creator.category} 
+              rating={creator.rating} 
+            />
+          ))}
         </div>
         
-        {filteredCreators.length === 0 && <div className="text-center p-8 bg-white/5 rounded-lg border border-white/10">
+        {filteredCreators.length === 0 && (
+          <div className="text-center p-8 bg-white/5 rounded-lg border border-white/10">
             <p className="text-gray-400">No creators found matching your filters.</p>
-          </div>}
+          </div>
+        )}
       </div>
-    </MainLayout>;
+    </MainLayout>
+  );
 };
+
 export default Index;
