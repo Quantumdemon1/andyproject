@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mail, Dollar, Svg, Calendar } from "lucide-react";
+import { Mail, Calendar, DollarSign } from "lucide-react";
 
 const HomeSidebar = () => {
   return (
@@ -54,7 +54,7 @@ const HomeSidebar = () => {
           <div className="bg-gradient-to-br from-aura-blue to-aura-purple/50 p-6 rounded-lg flex items-center justify-center">
             <Mail size={60} className="text-white" />
             <div className="absolute transform translate-x-6 translate-y-4">
-              <Dollar size={30} className="text-white" />
+              <DollarSign size={30} className="text-white" />
             </div>
           </div>
         </CardContent>
