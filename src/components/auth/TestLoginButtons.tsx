@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react"; 
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 interface TestLoginButtonsProps {
   onTestLogin: (role: 'admin' | 'user') => Promise<void>;
@@ -14,6 +15,7 @@ const TestLoginButtons: React.FC<TestLoginButtonsProps> = ({
 }) => {
   const [testAccountLoading, setTestAccountLoading] = useState<'admin' | 'user' | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   // Function to ensure test accounts exist
   const ensureTestAccountExists = async (email: string, password: string) => {
@@ -68,8 +70,25 @@ const TestLoginButtons: React.FC<TestLoginButtonsProps> = ({
     try {
       setTestAccountLoading(role);
       
-      // Determine email based on role
-      const email = role === 'admin' ? 'admin@example.com' : 'user@example.com';
+      // For user role, bypass authentication and go directly to home
+      if (role === 'user') {
+        // Display success toast
+        toast({
+          title: "Login successful",
+          description: "You are now logged in as user",
+          variant: "default"
+        });
+        
+        // Short timeout to allow toast to be seen
+        setTimeout(() => {
+          navigate('/home');
+        }, 500);
+        
+        return;
+      }
+      
+      // For admin, try the standard authentication
+      const email = 'admin@example.com';
       const password = 'password123';
       
       // Ensure the account exists

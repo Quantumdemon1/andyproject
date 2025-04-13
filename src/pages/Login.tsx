@@ -71,6 +71,11 @@ const Login = () => {
   };
 
   const handleTestLogin = async (role: 'admin' | 'user') => {
+    // For 'user' role, authentication is handled directly in TestLoginButtons
+    if (role === 'user') {
+      return Promise.resolve();
+    }
+    
     setErrorMessage(null);
     
     try {
