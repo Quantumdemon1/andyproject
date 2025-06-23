@@ -1,63 +1,72 @@
 
-import React, { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import React, { useState, useCallback, useMemo } from 'react';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchPosts } from '@/api/postsApi';
 import Post from '@/components/Post';
 import { Skeleton } from '@/components/ui/skeleton';
-import PostsPagination from './PostsPagination';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Loader2 } from 'lucide-react';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import PerformanceMonitor from '@/components/PerformanceMonitor';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 
 interface PostsFeedProps {
   filter?: string;
 }
 
 const PostsFeed: React.FC<PostsFeedProps> = ({ filter = 'all' }) => {
-  const [currentPage, setCurrentPage] = useState(1);
   const [retryCount, setRetryCount] = useState(0);
   const queryClient = useQueryClient();
 
-  const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['posts', currentPage, filter],
-    queryFn: () => fetchPosts(currentPage, 10, filter),
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    refetch
+  } = useInfiniteQuery({
+    queryKey: ['posts', filter],
+    queryFn: ({ pageParam = 1 }) => fetchPosts(pageParam, 10, filter),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      return lastPage.hasMore ? lastPage.currentPage + 1 : undefined;
+    },
     staleTime: 2 * 60 * 1000, // 2 minutes
-    gcTime: 5 * 60 * 1000, // 5 minutes (formerly cacheTime)
+    gcTime: 5 * 60 * 1000, // 5 minutes
     retry: 3,
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    setRetryCount(0);
-    // Prefetch next and previous pages for better UX
-    if (data && page < data.totalPages) {
-      queryClient.prefetchQuery({
-        queryKey: ['posts', page + 1, filter],
-        queryFn: () => fetchPosts(page + 1, 10, filter),
-        staleTime: 2 * 60 * 1000,
-      });
+  const handleLoadMore = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
     }
-    if (page > 1) {
-      queryClient.prefetchQuery({
-        queryKey: ['posts', page - 1, filter],
-        queryFn: () => fetchPosts(page - 1, 10, filter),
-        staleTime: 2 * 60 * 1000,
-      });
-    }
-  };
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const { loadMoreRef } = useInfiniteScroll({
+    hasMore: hasNextPage || false,
+    isLoading: isFetchingNextPage,
+    onLoadMore: handleLoadMore,
+    threshold: 200
+  });
 
   const handleRetry = () => {
     setRetryCount(prev => prev + 1);
     refetch();
   };
 
-  // Reset to page 1 when filter changes
+  // Reset retry count when filter changes
   React.useEffect(() => {
-    setCurrentPage(1);
     setRetryCount(0);
   }, [filter]);
+
+  // Flatten all posts from all pages
+  const allPosts = useMemo(() => {
+    return data?.pages.flatMap(page => page.posts) || [];
+  }, [data]);
 
   if (isLoading) {
     return (
@@ -85,7 +94,7 @@ const PostsFeed: React.FC<PostsFeedProps> = ({ filter = 'all' }) => {
     );
   }
 
-  if (error) {
+  if (isError) {
     return (
       <ErrorBoundary>
         <div className="text-center py-8 space-y-4">
@@ -111,7 +120,7 @@ const PostsFeed: React.FC<PostsFeedProps> = ({ filter = 'all' }) => {
     );
   }
 
-  if (!data || data.posts.length === 0) {
+  if (allPosts.length === 0) {
     const emptyMessages = {
       all: "No posts found. Be the first to create a post!",
       following: "No posts from users you follow. Try following some users!",
@@ -123,16 +132,14 @@ const PostsFeed: React.FC<PostsFeedProps> = ({ filter = 'all' }) => {
       <PerformanceMonitor componentName="PostsFeedEmpty">
         <div className="text-center py-8">
           <p className="text-gray-400">{emptyMessages[filter as keyof typeof emptyMessages] || emptyMessages.all}</p>
-          {filter !== 'all' && (
-            <Button
-              onClick={() => handlePageChange(1)}
-              variant="ghost"
-              size="sm"
-              className="mt-2 text-aura-blue hover:text-aura-blue/80"
-            >
-              Refresh
-            </Button>
-          )}
+          <Button
+            onClick={() => refetch()}
+            variant="ghost"
+            size="sm"
+            className="mt-2 text-aura-blue hover:text-aura-blue/80"
+          >
+            Refresh
+          </Button>
         </div>
       </PerformanceMonitor>
     );
@@ -141,21 +148,25 @@ const PostsFeed: React.FC<PostsFeedProps> = ({ filter = 'all' }) => {
   return (
     <PerformanceMonitor componentName="PostsFeed" threshold={200}>
       <ErrorBoundary>
-        <div>
-          <div className="space-y-6">
-            {data.posts.map((post) => (
-              <ErrorBoundary key={post.id}>
-                <Post post={post} />
-              </ErrorBoundary>
-            ))}
-          </div>
+        <div className="space-y-6">
+          {allPosts.map((post) => (
+            <ErrorBoundary key={post.id}>
+              <Post post={post} />
+            </ErrorBoundary>
+          ))}
           
-          <PostsPagination
-            currentPage={currentPage}
-            totalPages={data.totalPages}
-            onPageChange={handlePageChange}
-            isLoading={isLoading}
-          />
+          {/* Infinite scroll trigger */}
+          <div ref={loadMoreRef} className="flex justify-center py-4">
+            {isFetchingNextPage && (
+              <div className="flex items-center space-x-2 text-gray-400">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Loading more posts...</span>
+              </div>
+            )}
+            {!hasNextPage && allPosts.length > 0 && (
+              <p className="text-gray-500 text-sm">You've reached the end</p>
+            )}
+          </div>
         </div>
       </ErrorBoundary>
     </PerformanceMonitor>
