@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 const SidebarContent = () => <div className="space-y-6">
     <Card className="bg-aura-charcoal border-white/10">
       <div className="p-4">
-        <h3 className="w-full bg-gradient-to-r from-aura-blue to-aura-purple hover:from-aura-purple hover:to-aura-blue transition-colors duration-300 text-white py-6 px-[65px]">SUBSCRIPTION</h3>
+        <h3 className="w-full bg-gradient-to-r from-aura-blue to-aura-purple hover:from-aura-purple hover:to-aura-blue transition-colors duration-300 text-white py-6 px-[57px]">SUBSCRIPTION</h3>
         <div className="flex flex-col">
           <div className="flex justify-between items-center">
             <h3 className="font-medium">Subscription price and promotions</h3>
