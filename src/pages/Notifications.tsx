@@ -22,7 +22,7 @@ const SidebarContent = () => <div className="space-y-6">
     
     <Card className="bg-aura-charcoal border-white/10">
       <div className="p-4">
-        <h3 className="w-full bg-gradient-to-r from-aura-blue to-aura-purple hover:from-aura-purple hover:to-aura-blue transition-colors duration-300 text-white py-6">SCHEDULED EVENTS</h3>
+        <h3 className="w-full bg-gradient-to-r from-aura-blue to-aura-purple hover:from-aura-purple hover:to-aura-blue transition-colors duration-300 text-white py-6 text-center">SCHEDULED EVENTS</h3>
         <p className="text-sm text-gray-400">Now you can schedule Posts, Messages and Streams to grow your online presence, and view it in Calendar</p>
         
         <div className="flex justify-center my-6">
