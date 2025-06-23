@@ -568,6 +568,30 @@ export type Database = {
           },
         ]
       }
+      search_analytics: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_searched_at: string | null
+          search_count: number | null
+          search_term: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_searched_at?: string | null
+          search_count?: number | null
+          search_term: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_searched_at?: string | null
+          search_count?: number | null
+          search_term?: string
+        }
+        Relationships: []
+      }
       stripe_accounts: {
         Row: {
           account_link_url: string | null
@@ -769,6 +793,13 @@ export type Database = {
         }
         Returns: undefined
       }
+      get_trending_searches: {
+        Args: { limit_count?: number }
+        Returns: {
+          search_term: string
+          search_count: number
+        }[]
+      }
       get_user_conversations: {
         Args: { user_uuid: string }
         Returns: {
@@ -785,6 +816,28 @@ export type Database = {
           other_participant_avatar_url: string
           other_participant_is_online: boolean
         }[]
+      }
+      global_search: {
+        Args: {
+          search_query: string
+          search_type?: string
+          limit_count?: number
+          offset_count?: number
+        }
+        Returns: {
+          result_type: string
+          result_id: string
+          title: string
+          content: string
+          avatar_url: string
+          username: string
+          created_at: string
+          rank: number
+        }[]
+      }
+      track_search: {
+        Args: { search_term: string }
+        Returns: undefined
       }
       update_message_status: {
         Args: { _message_id: string; _status: string }

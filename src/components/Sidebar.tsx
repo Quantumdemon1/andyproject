@@ -1,7 +1,6 @@
-
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Home, Bell, MessageSquare, BookMarked, FolderArchive, Calendar, UserCircle, MoreHorizontal, PlusCircle, Menu, X } from "lucide-react";
+import { Home, Bell, MessageSquare, BookMarked, FolderArchive, Calendar, UserCircle, MoreHorizontal, PlusCircle, Menu, X, Search, Compass, MessageCircle, Clock, Shield, Bookmark } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -15,15 +14,16 @@ const Sidebar: React.FC<SidebarProps> = ({ activePath }) => {
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
   
-  const navItems = [
-    { icon: Home, label: "Home", path: "/" },
-    { icon: Bell, label: "Notifications", path: "/notifications", badge: "99+" },
-    { icon: MessageSquare, label: "Messages", path: "/messages", badge: "14" },
-    { icon: BookMarked, label: "Collections", path: "/collections" },
-    { icon: FolderArchive, label: "Vault", path: "/vault" },
-    { icon: Calendar, label: "Queue", path: "/queue" },
-    { icon: UserCircle, label: "My profile", path: "/profile" },
-    { icon: MoreHorizontal, label: "More", path: "/more" },
+  const navigationItems = [
+    { icon: Home, label: 'Home', path: '/' },
+    { icon: Search, label: 'Search', path: '/search' },
+    { icon: Compass, label: 'Discover', path: '/discover' },
+    { icon: MessageCircle, label: 'Messages', path: '/messages' },
+    { icon: Bell, label: 'Notifications', path: '/notifications' },
+    { icon: Clock, label: 'Queue', path: '/queue' },
+    { icon: Shield, label: 'Vault', path: '/vault' },
+    { icon: Bookmark, label: 'Collections', path: '/collections' },
+    { icon: MoreHorizontal, label: 'More', path: '/more' },
   ];
 
   const toggleSidebar = () => {
@@ -64,7 +64,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePath }) => {
         )}
         
         <nav className="space-y-1">
-          {navItems.map((item) => (
+          {navigationItems.map((item) => (
             <Link
               key={item.path}
               to={item.path}
