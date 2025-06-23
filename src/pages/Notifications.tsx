@@ -6,7 +6,6 @@ import { Card } from "@/components/ui/card";
 import NotificationItem from "@/components/NotificationItem";
 import { fetchNotifications, markAllNotificationsAsRead, type Notification } from "@/api/notificationsApi";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect } from "react";
 
 const SidebarContent = () => (
   <div className="space-y-6">
