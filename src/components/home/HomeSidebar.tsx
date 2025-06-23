@@ -1,8 +1,10 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mail, Calendar, DollarSign } from "lucide-react";
+import { Mail, Calendar, DollarSign, Plus } from "lucide-react";
+
 const HomeSidebar = () => {
-  return <div className="space-y-6">
+  return (
+    <div className="space-y-6">
       <Card className="bg-aura-charcoal border-white/10">
         <CardHeader className="w-full bg-gradient-to-r from-aura-blue to-aura-purple hover:from-aura-purple hover:to-aura-blue transition-colors duration-300 text-white py-6">
           <CardTitle className="text-lg">SUBSCRIPTION</CardTitle>
@@ -34,7 +36,7 @@ const HomeSidebar = () => {
           <p className="text-sm text-center text-gray-400">You have no scheduled events.</p>
           
           <div className="bg-white/5 h-12 flex items-center justify-center mt-4 rounded-md cursor-pointer">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-plus text-gray-400"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
+            <Plus size={20} className="text-gray-400" />
           </div>
           
           <div className="mt-4 flex justify-end">
@@ -56,6 +58,8 @@ const HomeSidebar = () => {
           </div>
         </CardContent>
       </Card>
-    </div>;
+    </div>
+  );
 };
+
 export default HomeSidebar;
