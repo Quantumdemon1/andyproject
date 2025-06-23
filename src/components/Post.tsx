@@ -1,309 +1,280 @@
 
-import React, { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { Heart, MessageCircle, Share, MoreHorizontal, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Heart, MessageCircle, Share2, MoreHorizontal } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 import { formatDistanceToNow } from 'date-fns';
+import { toggleLike } from '@/api/likesApi';
+import { fetchComments, createComment, type Comment } from '@/api/commentsApi';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/components/ui/use-toast';
-import type { Post as PostType } from '@/api/postsApi';
 
 interface PostProps {
-  post: PostType;
+  post: {
+    id: string;
+    content: string;
+    image_url?: string;
+    video_url?: string;
+    created_at: string;
+    likes_count: number;
+    comments_count: number;
+    author?: {
+      username: string;
+      avatar_url: string;
+      display_name?: string;
+    };
+    user_id: string;
+  };
 }
 
 const Post: React.FC<PostProps> = ({ post }) => {
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
+  const [isLiked, setIsLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(post.likes_count);
   const [showComments, setShowComments] = useState(false);
-  const [commentText, setCommentText] = useState('');
+  const [newComment, setNewComment] = useState('');
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const queryClient = useQueryClient();
 
-  // Check if user has liked this post
-  const { data: userLike } = useQuery({
-    queryKey: ['like', post.id, user?.id],
-    queryFn: async () => {
-      if (!user) return null;
-      const { data } = await supabase
-        .from('likes')
-        .select('id')
-        .eq('post_id', post.id)
-        .eq('user_id', user.id)
-        .single();
-      return data;
-    },
-    enabled: !!user,
-  });
-
-  // Fetch comments for this post
   const { data: comments = [] } = useQuery({
     queryKey: ['comments', post.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('comments')
-        .select(`
-          *,
-          user_profiles(username, avatar_url, display_name)
-        `)
-        .eq('post_id', post.id)
-        .order('created_at', { ascending: true });
-      
-      if (error) throw error;
-      return data || [];
-    },
+    queryFn: () => fetchComments(post.id),
+    enabled: showComments,
   });
 
-  const likeMutation = useMutation({
-    mutationFn: async () => {
-      if (!user) throw new Error('Not authenticated');
-      
-      if (userLike) {
-        // Unlike
-        const { error } = await supabase
-          .from('likes')
-          .delete()
-          .eq('id', userLike.id);
-        if (error) throw error;
-      } else {
-        // Like
-        const { error } = await supabase
-          .from('likes')
-          .insert({ post_id: post.id, user_id: user.id });
-        if (error) throw error;
+  // Check if current user has liked this post
+  useEffect(() => {
+    const checkLikeStatus = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
 
-        // Create notification for post author
-        if (post.user_id !== user.id) {
-          await supabase.rpc('create_notification', {
-            recipient_id: post.user_id,
-            notification_type: 'like',
-            notification_title: 'New Like',
-            notification_content: `${user.email} liked your post`,
-            related_post: post.id,
-            related_user: user.id
-          });
-        }
+        const { data } = await supabase
+          .from('likes')
+          .select('id')
+          .eq('post_id', post.id)
+          .eq('user_id', user.id)
+          .single();
+
+        setIsLiked(!!data);
+      } catch (error) {
+        // User hasn't liked this post
+        setIsLiked(false);
       }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['like', post.id, user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: 'Failed to update like',
-        variant: 'destructive'
-      });
-    }
-  });
+    };
 
-  const commentMutation = useMutation({
-    mutationFn: async (content: string) => {
-      if (!user) throw new Error('Not authenticated');
-      
-      const { error } = await supabase
-        .from('comments')
-        .insert({
-          post_id: post.id,
-          user_id: user.id,
-          content: content.trim()
+    checkLikeStatus();
+  }, [post.id]);
+
+  const handleLike = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: 'Error',
+          description: 'You must be logged in to like posts',
+          variant: 'destructive'
         });
-      
-      if (error) throw error;
+        return;
+      }
 
-      // Create notification for post author
-      if (post.user_id !== user.id) {
+      const wasLiked = await toggleLike(post.id);
+      setIsLiked(wasLiked);
+      setLikesCount(prev => wasLiked ? prev + 1 : prev - 1);
+
+      // Create notification for the post author if it's a like (not unlike)
+      if (wasLiked && post.user_id !== user.id) {
         await supabase.rpc('create_notification', {
           recipient_id: post.user_id,
-          notification_type: 'comment',
-          notification_title: 'New Comment',
-          notification_content: `${user.email} commented on your post`,
+          notification_type: 'like',
+          notification_title: 'New Like',
+          notification_content: `${user.user_metadata?.username || 'Someone'} liked your post`,
           related_post: post.id,
           related_user: user.id
         });
       }
-    },
-    onSuccess: () => {
-      setCommentText('');
-      queryClient.invalidateQueries({ queryKey: ['comments', post.id] });
+
+      // Invalidate posts query to update counts
       queryClient.invalidateQueries({ queryKey: ['posts'] });
-    },
-    onError: () => {
-      toast({
-        title: 'Error',
-        description: 'Failed to post comment',
-        variant: 'destructive'
-      });
-    }
-  });
-
-  const handleLike = () => {
-    if (!user) {
-      toast({
-        title: 'Login Required',
-        description: 'Please log in to like posts',
-        variant: 'destructive'
-      });
-      return;
-    }
-    likeMutation.mutate();
-  };
-
-  const handleComment = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) {
-      toast({
-        title: 'Login Required',
-        description: 'Please log in to comment',
-        variant: 'destructive'
-      });
-      return;
-    }
-    if (commentText.trim()) {
-      commentMutation.mutate(commentText);
+    } catch (error) {
+      console.error('Error toggling like:', error);
     }
   };
+
+  const handleComment = async () => {
+    if (!newComment.trim()) return;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: 'Error',
+          description: 'You must be logged in to comment',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      setIsSubmittingComment(true);
+      const comment = await createComment(post.id, newComment);
+      
+      if (comment) {
+        setNewComment('');
+        
+        // Create notification for the post author
+        if (post.user_id !== user.id) {
+          await supabase.rpc('create_notification', {
+            recipient_id: post.user_id,
+            notification_type: 'comment',
+            notification_title: 'New Comment',
+            notification_content: `${user.user_metadata?.username || 'Someone'} commented on your post`,
+            related_post: post.id,
+            related_user: user.id
+          });
+        }
+
+        // Invalidate queries to update data
+        queryClient.invalidateQueries({ queryKey: ['comments', post.id] });
+        queryClient.invalidateQueries({ queryKey: ['posts'] });
+      }
+    } catch (error) {
+      console.error('Error creating comment:', error);
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  };
+
+  const timeAgo = formatDistanceToNow(new Date(post.created_at), { addSuffix: true });
 
   return (
-    <Card className="mb-6">
-      <CardContent className="p-6">
+    <Card className="bg-aura-charcoal border-white/10 overflow-hidden">
+      <div className="p-6">
         {/* Post Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-3">
             <Avatar className="h-10 w-10">
               <AvatarImage src={post.author?.avatar_url} />
-              <AvatarFallback>
-                {(post.author?.display_name || post.author?.username || 'U').charAt(0).toUpperCase()}
-              </AvatarFallback>
+              <AvatarFallback>{post.author?.username?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-semibold">
+              <p className="font-medium text-white">
                 {post.author?.display_name || post.author?.username || 'Unknown User'}
               </p>
-              <p className="text-sm text-gray-500">
-                {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
-              </p>
+              <p className="text-sm text-gray-400">@{post.author?.username || 'unknown'} • {timeAgo}</p>
             </div>
           </div>
-          <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
             <MoreHorizontal className="h-4 w-4" />
           </Button>
         </div>
 
         {/* Post Content */}
         <div className="mb-4">
-          <p className="text-gray-900 whitespace-pre-wrap">{post.content}</p>
-          
-          {/* Media Content */}
-          {post.image_url && (
-            <div className="mt-3">
-              <img
-                src={post.image_url}
-                alt="Post content"
-                className="rounded-lg max-w-full h-auto"
-                loading="lazy"
-              />
-            </div>
-          )}
-          
-          {post.video_url && (
-            <div className="mt-3">
-              <video
-                src={post.video_url}
-                controls
-                className="rounded-lg max-w-full h-auto"
-                preload="metadata"
-              >
-                Your browser does not support the video tag.
-              </video>
-            </div>
-          )}
+          <p className="text-white whitespace-pre-wrap">{post.content}</p>
         </div>
 
+        {/* Post Media */}
+        {post.image_url && (
+          <div className="mb-4">
+            <img 
+              src={post.image_url} 
+              alt="Post content" 
+              className="w-full rounded-lg max-h-96 object-cover"
+            />
+          </div>
+        )}
+
+        {post.video_url && (
+          <div className="mb-4">
+            <video 
+              src={post.video_url} 
+              controls 
+              className="w-full rounded-lg max-h-96"
+            />
+          </div>
+        )}
+
         {/* Post Actions */}
-        <div className="flex items-center space-x-4 pt-3 border-t">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleLike}
-            className={`flex items-center space-x-2 ${userLike ? 'text-red-500' : 'text-gray-500'}`}
-            disabled={likeMutation.isPending}
-          >
-            <Heart className={`h-4 w-4 ${userLike ? 'fill-current' : ''}`} />
-            <span>{post.likes_count || 0}</span>
-          </Button>
+        <div className="flex items-center justify-between border-t border-white/10 pt-4">
+          <div className="flex items-center space-x-6">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLike}
+              className={`flex items-center space-x-2 ${
+                isLiked ? 'text-red-400 hover:text-red-300' : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
+              <span>{likesCount}</span>
+            </Button>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowComments(!showComments)}
-            className="flex items-center space-x-2 text-gray-500"
-          >
-            <MessageCircle className="h-4 w-4" />
-            <span>{post.comments_count || 0}</span>
-          </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowComments(!showComments)}
+              className="flex items-center space-x-2 text-gray-400 hover:text-white"
+            >
+              <MessageCircle className="h-4 w-4" />
+              <span>{comments.length}</span>
+            </Button>
 
-          <Button variant="ghost" size="sm" className="flex items-center space-x-2 text-gray-500">
-            <Share2 className="h-4 w-4" />
-            <span>Share</span>
-          </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex items-center space-x-2 text-gray-400 hover:text-white"
+            >
+              <Share className="h-4 w-4" />
+              <span>Share</span>
+            </Button>
+          </div>
         </div>
 
         {/* Comments Section */}
         {showComments && (
-          <div className="mt-4 pt-4 border-t">
-            {/* Add Comment Form */}
-            {user && (
-              <form onSubmit={handleComment} className="mb-4">
-                <div className="flex space-x-3">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.user_metadata?.avatar_url} />
-                    <AvatarFallback>
-                      {(user.email || 'U').charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <textarea
-                      value={commentText}
-                      onChange={(e) => setCommentText(e.target.value)}
-                      placeholder="Write a comment..."
-                      className="w-full p-2 border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      rows={2}
-                    />
-                    <div className="flex justify-end mt-2">
-                      <Button
-                        type="submit"
-                        size="sm"
-                        disabled={!commentText.trim() || commentMutation.isPending}
-                      >
-                        {commentMutation.isPending ? 'Posting...' : 'Comment'}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </form>
-            )}
+          <div className="mt-4 border-t border-white/10 pt-4">
+            {/* Comment Input */}
+            <div className="flex space-x-3 mb-4">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src="/placeholder.svg" />
+                <AvatarFallback>U</AvatarFallback>
+              </Avatar>
+              <div className="flex-1 flex space-x-2">
+                <Textarea
+                  placeholder="Write a comment..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  className="flex-1 min-h-[80px] bg-white/5 border-white/10 text-white placeholder:text-gray-400 resize-none"
+                />
+                <Button
+                  onClick={handleComment}
+                  disabled={!newComment.trim() || isSubmittingComment}
+                  size="sm"
+                  className="bg-aura-blue hover:bg-aura-blue/80"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
 
             {/* Comments List */}
-            <div className="space-y-3">
-              {comments.map((comment: any) => (
+            <div className="space-y-4">
+              {comments.map((comment: Comment) => (
                 <div key={comment.id} className="flex space-x-3">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={comment.user_profiles?.avatar_url} />
-                    <AvatarFallback>
-                      {(comment.user_profiles?.display_name || comment.user_profiles?.username || 'U').charAt(0).toUpperCase()}
-                    </AvatarFallback>
+                    <AvatarImage src={comment.author?.avatar_url} />
+                    <AvatarFallback>{comment.author?.username?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <p className="font-semibold text-sm">
-                        {comment.user_profiles?.display_name || comment.user_profiles?.username || 'Unknown User'}
+                    <div className="bg-white/5 rounded-lg p-3">
+                      <p className="font-medium text-sm text-white mb-1">
+                        {comment.author?.display_name || comment.author?.username || 'Unknown User'}
                       </p>
-                      <p className="text-gray-900">{comment.content}</p>
+                      <p className="text-sm text-gray-300">{comment.content}</p>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-400 mt-1">
                       {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
                     </p>
                   </div>
@@ -312,7 +283,7 @@ const Post: React.FC<PostProps> = ({ post }) => {
             </div>
           </div>
         )}
-      </CardContent>
+      </div>
     </Card>
   );
 };

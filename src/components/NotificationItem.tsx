@@ -3,6 +3,8 @@ import React from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
+import { markNotificationAsRead } from "@/api/notificationsApi";
+import { useQueryClient } from "@tanstack/react-query";
 
 type NotificationType = 'subscription' | 'like' | 'comment' | 'tip' | 'mention';
 
@@ -26,6 +28,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
   onDismiss,
 }) => {
   const timeAgo = formatDistanceToNow(timestamp, { addSuffix: true });
+  const queryClient = useQueryClient();
   
   const getTypeColor = (type: NotificationType) => {
     switch (type) {
@@ -45,12 +48,22 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
   };
   
   const typeColor = getTypeColor(type);
+
+  const handleClick = async () => {
+    if (!isRead) {
+      await markNotificationAsRead(id);
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    }
+  };
   
   return (
-    <div className={cn(
-      "flex items-start gap-3 p-4 border-b border-white/10",
-      !isRead && "bg-white/5"
-    )}>
+    <div 
+      className={cn(
+        "flex items-start gap-3 p-4 border-b border-white/10 cursor-pointer hover:bg-white/5 transition-colors",
+        !isRead && "bg-white/5"
+      )}
+      onClick={handleClick}
+    >
       <div className="relative">
         <div 
           className="h-12 w-12 rounded-full bg-cover bg-center border border-white/20"
@@ -65,10 +78,17 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
         <p className="text-sm">{content}</p>
         <p className="text-xs text-gray-400 mt-1">{timeAgo}</p>
       </div>
+
+      {!isRead && (
+        <div className="h-2 w-2 bg-aura-blue rounded-full mt-2"></div>
+      )}
       
       {onDismiss && (
         <button
-          onClick={() => onDismiss(id)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDismiss(id);
+          }}
           className="text-gray-400 hover:text-white"
         >
           <X size={16} />
