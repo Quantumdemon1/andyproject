@@ -7,8 +7,18 @@ export interface Message {
   created_at: string;
   status: 'sent' | 'delivered' | 'read';
   attachment_url?: string;
+  thread_id?: string;
+  reply_to_message_id?: string;
   isMe?: boolean; // Computed locally
   updated_at: string;
+}
+
+export interface MessageReaction {
+  id: string;
+  message_id: string;
+  user_id: string;
+  emoji: string;
+  created_at: string;
 }
 
 export interface Conversation {

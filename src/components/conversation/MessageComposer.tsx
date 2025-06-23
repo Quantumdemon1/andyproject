@@ -8,12 +8,18 @@ import FileUpload from "@/components/FileUpload";
 import AttachmentPreview from "./AttachmentPreview";
 
 interface MessageComposerProps {
-  onSendMessage: (content: string, attachmentUrl?: string) => Promise<void>;
+  onSendMessage: (content: string, attachmentUrl?: string, replyToId?: string, threadId?: string) => Promise<void>;
+  replyToMessage?: { id: string; content: string; sender_name: string } | null;
+  onCancelReply?: () => void;
+  threadId?: string;
   isMobile?: boolean;
 }
 
 const MessageComposer: React.FC<MessageComposerProps> = ({ 
   onSendMessage, 
+  replyToMessage,
+  onCancelReply,
+  threadId,
   isMobile = false 
 }) => {
   const [newMessage, setNewMessage] = useState("");
@@ -25,9 +31,15 @@ const MessageComposer: React.FC<MessageComposerProps> = ({
     
     try {
       setIsSending(true);
-      await onSendMessage(newMessage, attachmentUrl);
+      await onSendMessage(
+        newMessage, 
+        attachmentUrl, 
+        replyToMessage?.id,
+        threadId
+      );
       setNewMessage("");
       setAttachmentUrl(undefined);
+      if (onCancelReply) onCancelReply();
     } catch (error) {
       console.error("Error sending message:", error);
     } finally {
@@ -52,6 +64,31 @@ const MessageComposer: React.FC<MessageComposerProps> = ({
 
   return (
     <div className={`${isMobile ? 'p-3' : 'p-4'} border-t border-white/10 bg-white/5`}>
+      {replyToMessage && (
+        <div className="mb-3 p-2 bg-white/5 rounded-md border-l-2 border-aura-purple">
+          <div className="flex justify-between items-start">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-aura-purple font-medium">
+                Replying to {replyToMessage.sender_name}
+              </p>
+              <p className="text-sm text-gray-300 truncate">
+                {replyToMessage.content}
+              </p>
+            </div>
+            {onCancelReply && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 text-gray-400 hover:text-gray-200"
+                onClick={onCancelReply}
+              >
+                ×
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
       <AttachmentPreview 
         attachmentUrl={attachmentUrl} 
         onRemove={() => setAttachmentUrl(undefined)} 
@@ -65,7 +102,7 @@ const MessageComposer: React.FC<MessageComposerProps> = ({
             </Button>
           </FileUpload>
           <Textarea
-            placeholder="Type a message..."
+            placeholder={replyToMessage ? "Type a reply..." : "Type a message..."}
             className="flex-1 bg-white/10 border-white/10 focus-visible:ring-aura-purple resize-none h-10 leading-tight pt-2"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}

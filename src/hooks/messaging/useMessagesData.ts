@@ -112,7 +112,12 @@ export const useMessagesData = (
     };
   }, [currentConversation, userId, directAccessMode, mockMessages]);
 
-  const sendMessage = async (content: string, attachmentUrl?: string) => {
+  const sendMessage = async (
+    content: string, 
+    attachmentUrl?: string,
+    replyToMessageId?: string,
+    threadId?: string
+  ) => {
     if (!userId || !currentConversation) return;
     
     if (directAccessMode) {
@@ -126,6 +131,8 @@ export const useMessagesData = (
         updated_at: new Date().toISOString(),
         status: 'sent',
         attachment_url: attachmentUrl,
+        reply_to_message_id: replyToMessageId,
+        thread_id: threadId,
         isMe: true
       };
       
@@ -150,7 +157,7 @@ export const useMessagesData = (
       return;
     }
     
-    await sendMsg(currentConversation.id, userId, content, attachmentUrl);
+    await sendMsg(currentConversation.id, userId, content, attachmentUrl, replyToMessageId, threadId);
   };
 
   const deleteMessage = async (messageId: string) => {
