@@ -141,6 +141,30 @@ export type Database = {
           },
         ]
       }
+      content_categories: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       content_flags: {
         Row: {
           auto_action_taken: string | null
@@ -460,6 +484,35 @@ export type Database = {
           },
         ]
       }
+      post_tags: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          tag: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          tag: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          tag?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_tags_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       posts: {
         Row: {
           comments_count: number | null
@@ -564,6 +617,56 @@ export type Database = {
             columns: ["reported_post_id"]
             isOneToOne: false
             referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scheduled_posts: {
+        Row: {
+          category_id: string | null
+          content: string
+          created_at: string
+          id: string
+          image_url: string | null
+          published_at: string | null
+          scheduled_for: string
+          status: string
+          tags: string[] | null
+          user_id: string
+          video_url: string | null
+        }
+        Insert: {
+          category_id?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          published_at?: string | null
+          scheduled_for: string
+          status?: string
+          tags?: string[] | null
+          user_id: string
+          video_url?: string | null
+        }
+        Update: {
+          category_id?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          published_at?: string | null
+          scheduled_for?: string
+          status?: string
+          tags?: string[] | null
+          user_id?: string
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_posts_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "content_categories"
             referencedColumns: ["id"]
           },
         ]

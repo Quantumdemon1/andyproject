@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import MainLayout from "@/components/MainLayout";
-import PostComposer from "@/components/home/PostComposer";
+import EnhancedPostComposer from "@/components/home/EnhancedPostComposer";
 import ContentTabs from "@/components/home/ContentTabs";
 import SubscriptionNotice from "@/components/home/SubscriptionNotice";
 import PostsFeed from "@/components/home/PostsFeed";
@@ -28,7 +28,7 @@ const Index = () => {
       rightSidebar={<HomeSidebar />}
     >
       <div>
-        <PostComposer onPostCreated={handleRefreshFeed} />
+        <EnhancedPostComposer onPostCreated={handleRefreshFeed} />
         <ContentTabs activeTab={activeTab} setActiveTab={setActiveTab} />
         <SubscriptionNotice />
         <LoadPostsButton onClick={handleRefreshFeed} />
