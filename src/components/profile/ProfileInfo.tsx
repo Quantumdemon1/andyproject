@@ -8,9 +8,10 @@ import { UserProfile } from "@/pages/Profile";
 interface ProfileInfoProps {
   profile: UserProfile | null;
   setEditMode: React.Dispatch<React.SetStateAction<boolean>>;
+  isOwnProfile?: boolean;
 }
 
-const ProfileInfo = ({ profile, setEditMode }: ProfileInfoProps) => {
+const ProfileInfo = ({ profile, setEditMode, isOwnProfile = true }: ProfileInfoProps) => {
   return (
     <>
       <div className="flex justify-between mt-[-40px]">
@@ -22,11 +23,13 @@ const ProfileInfo = ({ profile, setEditMode }: ProfileInfoProps) => {
         </div>
       </div>
       
-      <div className="mt-4">
-        <Button variant="gradient" className="btn-pulse" onClick={() => setEditMode(true)}>
-          <Edit size={16} className="mr-2" /> Edit Profile
-        </Button>
-      </div>
+      {isOwnProfile && (
+        <div className="mt-4">
+          <Button variant="gradient" className="btn-pulse" onClick={() => setEditMode(true)}>
+            <Edit size={16} className="mr-2" /> Edit Profile
+          </Button>
+        </div>
+      )}
       
       <div className="mt-6 flex gap-6 text-center">
         <div>

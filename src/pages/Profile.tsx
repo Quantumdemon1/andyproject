@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import MainLayout from "@/components/MainLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +24,7 @@ export interface UserProfile {
 }
 
 const Profile = () => {
+  const { userId } = useParams<{ userId?: string }>();
   const { user } = useAuth();
   const { toast } = useToast();
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -30,23 +32,34 @@ const Profile = () => {
   const [editMode, setEditMode] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
+  // Determine which user's profile to load
+  const targetUserId = userId || user?.id;
+  const isOwnProfile = user?.id === targetUserId;
+  
   const fetchProfile = async () => {
-    if (!user) {
-      setError("Please log in to view your profile");
+    if (!targetUserId) {
+      setError("Please log in to view profiles");
       setLoading(false);
       return;
     }
 
     try {
       setError(null);
+      setLoading(true);
+      
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', targetUserId)
         .single();
         
       if (error) {
         throw error;
+      }
+      
+      if (!data) {
+        setError("Profile not found");
+        return;
       }
       
       setProfile(data);
@@ -65,7 +78,7 @@ const Profile = () => {
   
   useEffect(() => {
     fetchProfile();
-  }, [user]);
+  }, [targetUserId]);
 
   const handleProfileUpdate = (updatedData: Partial<UserProfile>) => {
     if (profile) {
@@ -78,6 +91,11 @@ const Profile = () => {
     // Refetch profile data to ensure we have the latest information
     fetchProfile();
   };
+
+  // Dynamic page title based on profile ownership
+  const pageTitle = isOwnProfile ? "MY PROFILE" : 
+    profile?.display_name ? `${profile.display_name.toUpperCase()}'S PROFILE` : 
+    profile?.username ? `@${profile.username.toUpperCase()}` : "PROFILE";
 
   if (loading) {
     return <ProfileLoading />;
@@ -99,7 +117,7 @@ const Profile = () => {
     );
   }
 
-  if (editMode) {
+  if (editMode && isOwnProfile) {
     return (
       <MainLayout title="EDIT PROFILE" backButton={true}>
         <div className="p-6">
@@ -120,15 +138,23 @@ const Profile = () => {
   }
 
   return (
-    <MainLayout title="MY PROFILE" backButton={true}>
+    <MainLayout title={pageTitle} backButton={true}>
       <ProfileHeader profile={profile} user={user} />
       
       <div className="px-6 relative">
         <div className="flex justify-between mt-[-40px]">
-          <ProfileAvatar profile={profile} user={user} setProfile={setProfile} />
+          <ProfileAvatar 
+            profile={profile} 
+            user={isOwnProfile ? user : null} 
+            setProfile={isOwnProfile ? setProfile : () => {}} 
+          />
         </div>
         
-        <ProfileInfo profile={profile} setEditMode={setEditMode} />
+        <ProfileInfo 
+          profile={profile} 
+          setEditMode={isOwnProfile ? setEditMode : () => {}}
+          isOwnProfile={isOwnProfile}
+        />
         
         <ProfileTabs />
       </div>
