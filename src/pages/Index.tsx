@@ -10,14 +10,19 @@ import HomeSidebar from "@/components/home/HomeSidebar";
 import LoadPostsButton from "@/components/home/LoadPostsButton";
 import InstallPrompt from "@/components/mobile/InstallPrompt";
 import PullToRefreshIndicator from "@/components/mobile/PullToRefreshIndicator";
+import SkipLink from "@/components/accessibility/SkipLink";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { useSwipeGestures } from "@/hooks/useSwipeGestures";
+import { useRealTimeUpdates } from "@/hooks/useRealTimeUpdates";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("all");
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
+
+  // Enable real-time updates
+  useRealTimeUpdates();
 
   const handleRefreshFeed = async () => {
     // Invalidate all posts queries to force a refresh
@@ -47,34 +52,38 @@ const Index = () => {
   });
 
   return (
-    <MainLayout 
-      title="HOME" 
-      icons={!isMobile} 
-      searchBar={!isMobile} 
-      rightSidebar={<HomeSidebar />}
-    >
-      <div 
-        ref={(el) => {
-          containerRef.current = el;
-          swipeRef.current = el;
-        }}
-        className="touch-manipulation"
+    <>
+      <SkipLink />
+      <MainLayout 
+        title="HOME" 
+        icons={!isMobile} 
+        searchBar={!isMobile} 
+        rightSidebar={<HomeSidebar />}
       >
-        <PullToRefreshIndicator 
-          progress={progress}
-          isRefreshing={isRefreshing}
-          isPulling={isPulling}
-        />
-        
-        <EnhancedPostComposer onPostCreated={handleRefreshFeed} />
-        <ContentTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-        <SubscriptionNotice />
-        <LoadPostsButton onClick={handleRefreshFeed} />
-        <PostsFeed filter={activeTab} />
-        
-        <InstallPrompt />
-      </div>
-    </MainLayout>
+        <div 
+          id="main-content"
+          ref={(el) => {
+            containerRef.current = el;
+            swipeRef.current = el;
+          }}
+          className="touch-manipulation"
+        >
+          <PullToRefreshIndicator 
+            progress={progress}
+            isRefreshing={isRefreshing}
+            isPulling={isPulling}
+          />
+          
+          <EnhancedPostComposer onPostCreated={handleRefreshFeed} />
+          <ContentTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+          <SubscriptionNotice />
+          <LoadPostsButton onClick={handleRefreshFeed} />
+          <PostsFeed filter={activeTab} />
+          
+          <InstallPrompt />
+        </div>
+      </MainLayout>
+    </>
   );
 };
 
