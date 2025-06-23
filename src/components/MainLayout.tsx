@@ -4,10 +4,11 @@ import { useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 interface MainLayoutProps {
   children: React.ReactNode;
-  title: string;
+  title?: string;
   backButton?: boolean;
   searchBar?: boolean;
   icons?: boolean;
@@ -32,16 +33,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({
       <Sidebar activePath={location.pathname} />
       
       <div className="flex-1 flex flex-col">
-        <Header 
-          title={title} 
-          backButton={backButton} 
-          searchBar={searchBar && !isMobile} 
-          icons={icons && !isMobile} 
-          settings={settings}
-        />
+        <Header />
         
         <div className={cn(
-          "flex flex-1",
+          "flex flex-1 pt-16", // Add top padding to account for fixed header
           isMobile ? "flex-col" : "flex-row"
         )}>
           <div className={cn(
@@ -49,6 +44,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({
             rightSidebar && !isMobile ? "border-r border-white/10" : "",
             isMobile ? "p-4" : ""
           )}>
+            {title && (
+              <div className="mb-6">
+                <h1 className="text-2xl font-bold">{title}</h1>
+              </div>
+            )}
             {children}
           </div>
           
@@ -64,9 +64,5 @@ const MainLayout: React.FC<MainLayoutProps> = ({
     </div>
   );
 };
-
-// Add the cn utility function if it's not already imported
-// This will prevent errors if MainLayout doesn't already import it
-import { cn } from "@/lib/utils";
 
 export default MainLayout;
