@@ -1,20 +1,22 @@
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { ImageIcon, VideoIcon, Send } from "lucide-react";
+import { ImageIcon, VideoIcon, Send, X, Upload } from "lucide-react";
 import { createPost } from "@/api/postsApi";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/components/ui/use-toast";
 
 const PostComposer = () => {
   const [content, setContent] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
-  const [videoUrl, setVideoUrl] = useState("");
-  const [showMediaInputs, setShowMediaInputs] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploadedFileUrl, setUploadedFileUrl] = useState<string>("");
+  const [filePreview, setFilePreview] = useState<string>("");
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -25,26 +27,148 @@ const PostComposer = () => {
     onSuccess: () => {
       // Clear form
       setContent("");
-      setImageUrl("");
-      setVideoUrl("");
-      setShowMediaInputs(false);
+      setUploadedFile(null);
+      setUploadedFileUrl("");
+      setFilePreview("");
       
       // Refresh posts list
       queryClient.invalidateQueries({ queryKey: ['posts'] });
+      
+      toast({
+        title: "Success",
+        description: "Post created successfully!",
+      });
     },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create post",
+        variant: "destructive",
+      });
+    }
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size (max 50MB)
+    if (file.size > 50 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please select a file smaller than 50MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select an image or video file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadedFile(file);
+    
+    // Create preview
+    const objectUrl = URL.createObjectURL(file);
+    setFilePreview(objectUrl);
+  };
+
+  const uploadFile = async (file: File): Promise<string> => {
+    if (!user) throw new Error('Not authenticated');
+
+    setIsUploading(true);
+    try {
+      // Create filename with user id prefix and timestamp
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('post-media')
+        .upload(fileName, file);
+      
+      if (error) throw error;
+      
+      // Get public URL
+      const { data: publicUrlData } = supabase.storage
+        .from('post-media')
+        .getPublicUrl(data.path);
+      
+      return publicUrlData.publicUrl;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!content.trim()) return;
-    if (!user) return;
+    if (!content.trim() && !uploadedFile) {
+      toast({
+        title: "Empty post",
+        description: "Please add some content or media to your post",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!user) {
+      toast({
+        title: "Login required",
+        description: "Please log in to create a post",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    createPostMutation.mutate({
-      content: content.trim(),
-      imageUrl: imageUrl.trim() || undefined,
-      videoUrl: videoUrl.trim() || undefined,
-    });
+    try {
+      let mediaUrl = uploadedFileUrl;
+      
+      // Upload file if one is selected
+      if (uploadedFile && !uploadedFileUrl) {
+        mediaUrl = await uploadFile(uploadedFile);
+        setUploadedFileUrl(mediaUrl);
+      }
+
+      // Determine if it's an image or video
+      const isVideo = uploadedFile?.type.startsWith('video/');
+      
+      createPostMutation.mutate({
+        content: content.trim() || "",
+        imageUrl: isVideo ? undefined : mediaUrl,
+        videoUrl: isVideo ? mediaUrl : undefined,
+      });
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload media file",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const removeFile = () => {
+    setUploadedFile(null);
+    setUploadedFileUrl("");
+    if (filePreview) {
+      URL.revokeObjectURL(filePreview);
+      setFilePreview("");
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
   };
 
   return (
@@ -67,37 +191,56 @@ const PostComposer = () => {
             </div>
           </div>
 
-          {showMediaInputs && (
-            <div className="space-y-3 p-3 bg-gray-50 rounded-lg">
-              <div>
-                <Label htmlFor="image-url" className="text-sm font-medium">
-                  Image URL (optional)
-                </Label>
-                <Input
-                  id="image-url"
-                  type="url"
-                  placeholder="https://example.com/image.jpg"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="video-url" className="text-sm font-medium">
-                  Video URL (optional)
-                </Label>
-                <Input
-                  id="video-url"
-                  type="url"
-                  placeholder="https://example.com/video.mp4"
-                  value={videoUrl}
-                  onChange={(e) => setVideoUrl(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
+          {/* File Preview */}
+          {filePreview && (
+            <div className="relative">
+              {uploadedFile?.type.startsWith('image/') ? (
+                <div className="relative">
+                  <img
+                    src={filePreview}
+                    alt="Preview"
+                    className="max-h-64 rounded-lg object-cover"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-2 right-2"
+                    onClick={removeFile}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : uploadedFile?.type.startsWith('video/') ? (
+                <div className="relative">
+                  <video
+                    src={filePreview}
+                    controls
+                    className="max-h-64 rounded-lg"
+                    preload="metadata"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-2 right-2"
+                    onClick={removeFile}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : null}
             </div>
           )}
+
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,video/*"
+            onChange={handleFileSelect}
+            className="hidden"
+          />
 
           <div className="flex items-center justify-between">
             <div className="flex gap-2">
@@ -105,17 +248,18 @@ const PostComposer = () => {
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowMediaInputs(!showMediaInputs)}
+                onClick={triggerFileInput}
                 className="text-gray-600"
+                disabled={isUploading}
               >
                 <ImageIcon className="h-4 w-4 mr-1" />
-                Media
+                {isUploading ? 'Uploading...' : 'Media'}
               </Button>
             </div>
 
             <Button 
               type="submit" 
-              disabled={!content.trim() || createPostMutation.isPending}
+              disabled={(!content.trim() && !uploadedFile) || createPostMutation.isPending || isUploading}
               size="sm"
             >
               {createPostMutation.isPending ? (

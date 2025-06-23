@@ -87,6 +87,51 @@ export type Database = {
         }
         Relationships: []
       }
+      comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          parent_comment_id: string | null
+          post_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          parent_comment_id?: string | null
+          post_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          parent_comment_id?: string | null
+          post_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_parent_comment_id_fkey"
+            columns: ["parent_comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversation_participants: {
         Row: {
           conversation_id: string
@@ -164,6 +209,35 @@ export type Database = {
         }
         Relationships: []
       }
+      likes: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           attachment_url: string | null
@@ -201,6 +275,50 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          read_at: string | null
+          related_post_id: string | null
+          related_user_id: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          related_post_id?: string | null
+          related_user_id?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          related_post_id?: string | null
+          related_user_id?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_related_post_id_fkey"
+            columns: ["related_post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
             referencedColumns: ["id"]
           },
         ]
@@ -345,9 +463,13 @@ export type Database = {
           bio: string | null
           cover_url: string | null
           display_name: string | null
+          follower_count: number | null
           id: string
+          is_banned: boolean | null
           is_online: boolean | null
           last_seen: string | null
+          post_count: number | null
+          role: string | null
           tags: string | null
           username: string | null
         }
@@ -356,9 +478,13 @@ export type Database = {
           bio?: string | null
           cover_url?: string | null
           display_name?: string | null
+          follower_count?: number | null
           id: string
+          is_banned?: boolean | null
           is_online?: boolean | null
           last_seen?: string | null
+          post_count?: number | null
+          role?: string | null
           tags?: string | null
           username?: string | null
         }
@@ -367,9 +493,13 @@ export type Database = {
           bio?: string | null
           cover_url?: string | null
           display_name?: string | null
+          follower_count?: number | null
           id?: string
+          is_banned?: boolean | null
           is_online?: boolean | null
           last_seen?: string | null
+          post_count?: number | null
+          role?: string | null
           tags?: string | null
           username?: string | null
         }
@@ -380,6 +510,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_notification: {
+        Args: {
+          recipient_id: string
+          notification_type: string
+          notification_title: string
+          notification_content: string
+          related_post?: string
+          related_user?: string
+        }
+        Returns: string
+      }
       get_user_conversations: {
         Args: { user_uuid: string }
         Returns: {

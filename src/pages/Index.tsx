@@ -4,8 +4,7 @@ import MainLayout from "@/components/MainLayout";
 import PostComposer from "@/components/home/PostComposer";
 import ContentTabs from "@/components/home/ContentTabs";
 import SubscriptionNotice from "@/components/home/SubscriptionNotice";
-import LoadPostsButton from "@/components/home/LoadPostsButton";
-import CreatorsListing from "@/components/home/CreatorsListing";
+import PostsFeed from "@/components/home/PostsFeed";
 import HomeSidebar from "@/components/home/HomeSidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -24,8 +23,7 @@ const Index = () => {
         <PostComposer />
         <ContentTabs activeTab={activeTab} setActiveTab={setActiveTab} />
         <SubscriptionNotice />
-        <LoadPostsButton />
-        <CreatorsListing />
+        <PostsFeed />
       </div>
     </MainLayout>
   );

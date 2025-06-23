@@ -54,11 +54,43 @@ export async function fetchPosts(): Promise<Post[]> {
       });
     }
 
-    // Combine posts with author information
+    // Get likes and comments counts for all posts
+    const postIds = postsData.map(post => post.id);
+    
+    const [likesData, commentsData] = await Promise.all([
+      supabase
+        .from('likes')
+        .select('post_id')
+        .in('post_id', postIds),
+      supabase
+        .from('comments')
+        .select('post_id')
+        .in('post_id', postIds)
+    ]);
+
+    // Count likes and comments per post
+    const likesCount = new Map();
+    const commentsCount = new Map();
+    
+    if (likesData.data) {
+      likesData.data.forEach(like => {
+        likesCount.set(like.post_id, (likesCount.get(like.post_id) || 0) + 1);
+      });
+    }
+    
+    if (commentsData.data) {
+      commentsData.data.forEach(comment => {
+        commentsCount.set(comment.post_id, (commentsCount.get(comment.post_id) || 0) + 1);
+      });
+    }
+
+    // Combine posts with author information and counts
     const posts: Post[] = postsData.map((post: any) => {
       const profile = profilesMap.get(post.user_id);
       return {
         ...post,
+        likes_count: likesCount.get(post.id) || 0,
+        comments_count: commentsCount.get(post.id) || 0,
         author: profile ? {
           username: profile.username,
           avatar_url: profile.avatar_url,
