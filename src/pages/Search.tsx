@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -98,33 +97,33 @@ const Search = () => {
     // Apply date filters
     if (filters.dateRange !== 'all') {
       const now = new Date();
-      const filterDate = new Date();
       
-      switch (filters.dateRange) {
-        case 'today':
-          filterDate.setHours(0, 0, 0, 0);
-          break;
-        case 'week':
-          filterDate.setDate(now.getDate() - 7);
-          break;
-        case 'month':
-          filterDate.setMonth(now.getMonth() - 1);
-          break;
-        case 'custom':
-          if (filters.customStartDate) {
-            results = results.filter(r => 
-              r.created_at && new Date(r.created_at) >= filters.customStartDate!
-            );
-          }
-          if (filters.customEndDate) {
-            results = results.filter(r => 
-              r.created_at && new Date(r.created_at) <= filters.customEndDate!
-            );
-          }
-          return results;
-      }
-      
-      if (filters.dateRange !== 'custom') {
+      if (filters.dateRange === 'custom') {
+        if (filters.customStartDate) {
+          results = results.filter(r => 
+            r.created_at && new Date(r.created_at) >= filters.customStartDate!
+          );
+        }
+        if (filters.customEndDate) {
+          results = results.filter(r => 
+            r.created_at && new Date(r.created_at) <= filters.customEndDate!
+          );
+        }
+      } else {
+        const filterDate = new Date();
+        
+        switch (filters.dateRange) {
+          case 'today':
+            filterDate.setHours(0, 0, 0, 0);
+            break;
+          case 'week':
+            filterDate.setDate(now.getDate() - 7);
+            break;
+          case 'month':
+            filterDate.setMonth(now.getMonth() - 1);
+            break;
+        }
+        
         results = results.filter(r => 
           r.created_at && new Date(r.created_at) >= filterDate
         );

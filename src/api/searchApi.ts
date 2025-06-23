@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 
@@ -89,31 +88,31 @@ function applyClientFilters(results: SearchResult[], filters: ExtendedSearchFilt
     const now = new Date();
     let filterDate = new Date();
 
-    switch (filters.dateRange) {
-      case 'today':
-        filterDate.setHours(0, 0, 0, 0);
-        break;
-      case 'week':
-        filterDate.setDate(now.getDate() - 7);
-        break;
-      case 'month':
-        filterDate.setMonth(now.getMonth() - 1);
-        break;
-      case 'custom':
-        if (filters.customStartDate) {
-          filteredResults = filteredResults.filter(r => 
-            r.created_at && new Date(r.created_at) >= filters.customStartDate!
-          );
-        }
-        if (filters.customEndDate) {
-          filteredResults = filteredResults.filter(r => 
-            r.created_at && new Date(r.created_at) <= filters.customEndDate!
-          );
-        }
-        return filteredResults;
-    }
+    if (filters.dateRange === 'custom') {
+      if (filters.customStartDate) {
+        filteredResults = filteredResults.filter(r => 
+          r.created_at && new Date(r.created_at) >= filters.customStartDate!
+        );
+      }
+      if (filters.customEndDate) {
+        filteredResults = filteredResults.filter(r => 
+          r.created_at && new Date(r.created_at) <= filters.customEndDate!
+        );
+      }
+    } else {
+      // Handle other date ranges
+      switch (filters.dateRange) {
+        case 'today':
+          filterDate.setHours(0, 0, 0, 0);
+          break;
+        case 'week':
+          filterDate.setDate(now.getDate() - 7);
+          break;
+        case 'month':
+          filterDate.setMonth(now.getMonth() - 1);
+          break;
+      }
 
-    if (filters.dateRange !== 'custom') {
       filteredResults = filteredResults.filter(r => 
         r.created_at && new Date(r.created_at) >= filterDate
       );
