@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 
@@ -19,24 +18,50 @@ export interface Post {
   };
 }
 
-export async function fetchPosts(): Promise<Post[]> {
+export interface PostsResponse {
+  posts: Post[];
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+  hasMore: boolean;
+}
+
+const POSTS_PER_PAGE = 10;
+
+export async function fetchPosts(page: number = 1, limit: number = POSTS_PER_PAGE): Promise<PostsResponse> {
   try {
-    // First get posts
+    const offset = (page - 1) * limit;
+
+    // Get total count first for pagination
+    const { count: totalCount, error: countError } = await supabase
+      .from('posts')
+      .select('*', { count: 'exact', head: true });
+
+    if (countError) throw countError;
+
+    // Get posts with pagination
     const { data: postsData, error: postsError } = await supabase
       .from('posts')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (postsError) throw postsError;
 
     if (!postsData || postsData.length === 0) {
-      return [];
+      return {
+        posts: [],
+        totalCount: totalCount || 0,
+        totalPages: Math.ceil((totalCount || 0) / limit),
+        currentPage: page,
+        hasMore: false,
+      };
     }
 
-    // Get unique user IDs
+    // Get unique user IDs for batch profile fetch
     const userIds = [...new Set(postsData.map(post => post.user_id))];
 
-    // Get user profiles for these user IDs
+    // Batch fetch user profiles
     const { data: profilesData, error: profilesError } = await supabase
       .from('user_profiles')
       .select('id, username, avatar_url, display_name')
@@ -46,7 +71,7 @@ export async function fetchPosts(): Promise<Post[]> {
       console.error('Error fetching user profiles:', profilesError);
     }
 
-    // Create a map of user profiles by ID
+    // Create profiles map for O(1) lookup
     const profilesMap = new Map();
     if (profilesData) {
       profilesData.forEach(profile => {
@@ -54,10 +79,11 @@ export async function fetchPosts(): Promise<Post[]> {
       });
     }
 
-    // Get likes and comments counts for all posts
+    // Get post IDs for batch likes/comments count
     const postIds = postsData.map(post => post.id);
     
-    const [likesData, commentsData] = await Promise.all([
+    // Batch fetch likes and comments counts
+    const [likesResponse, commentsResponse] = await Promise.all([
       supabase
         .from('likes')
         .select('post_id')
@@ -72,14 +98,14 @@ export async function fetchPosts(): Promise<Post[]> {
     const likesCount = new Map();
     const commentsCount = new Map();
     
-    if (likesData.data) {
-      likesData.data.forEach(like => {
+    if (likesResponse.data) {
+      likesResponse.data.forEach(like => {
         likesCount.set(like.post_id, (likesCount.get(like.post_id) || 0) + 1);
       });
     }
     
-    if (commentsData.data) {
-      commentsData.data.forEach(comment => {
+    if (commentsResponse.data) {
+      commentsResponse.data.forEach(comment => {
         commentsCount.set(comment.post_id, (commentsCount.get(comment.post_id) || 0) + 1);
       });
     }
@@ -99,7 +125,16 @@ export async function fetchPosts(): Promise<Post[]> {
       };
     });
 
-    return posts;
+    const totalPages = Math.ceil((totalCount || 0) / limit);
+    const hasMore = page < totalPages;
+
+    return {
+      posts,
+      totalCount: totalCount || 0,
+      totalPages,
+      currentPage: page,
+      hasMore,
+    };
   } catch (error) {
     console.error('Error fetching posts:', error);
     toast({
@@ -107,7 +142,13 @@ export async function fetchPosts(): Promise<Post[]> {
       description: 'Failed to load posts',
       variant: 'destructive'
     });
-    return [];
+    return {
+      posts: [],
+      totalCount: 0,
+      totalPages: 0,
+      currentPage: page,
+      hasMore: false,
+    };
   }
 }
 
