@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +9,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 
-const PostComposer = () => {
+interface PostComposerProps {
+  onPostCreated?: () => void;
+}
+
+const PostComposer: React.FC<PostComposerProps> = ({ onPostCreated }) => {
   const [content, setContent] = useState("");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadedFileUrl, setUploadedFileUrl] = useState<string>("");
@@ -33,6 +36,9 @@ const PostComposer = () => {
       
       // Refresh posts list
       queryClient.invalidateQueries({ queryKey: ['posts'] });
+      
+      // Call the optional callback
+      onPostCreated?.();
       
       toast({
         title: "Success",
