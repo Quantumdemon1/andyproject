@@ -1,11 +1,8 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mail, Calendar, DollarSign } from "lucide-react";
-
 const HomeSidebar = () => {
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       <Card className="bg-aura-charcoal border-white/10">
         <CardHeader className="w-full bg-gradient-to-r from-aura-blue to-aura-purple hover:from-aura-purple hover:to-aura-blue transition-colors duration-300 text-white py-6">
           <CardTitle className="text-lg">SUBSCRIPTION</CardTitle>
@@ -13,7 +10,7 @@ const HomeSidebar = () => {
         <CardContent>
           <div className="flex flex-col">
             <div className="flex justify-between items-center">
-              <h3 className="font-medium">Subscription price and promotions</h3>
+              <h3 className="font-medium text-slate-50">Subscription price and promotions</h3>
               <span className="text-gray-400">&gt;</span>
             </div>
             <p className="text-sm text-gray-400">Free subscription</p>
@@ -59,8 +56,6 @@ const HomeSidebar = () => {
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default HomeSidebar;
