@@ -53,6 +53,10 @@ const Conversation: React.FC<ConversationProps> = ({
     });
   };
 
+  const handleDeleteMessage = async (messageId: string) => {
+    deleteMessage(messageId);
+  };
+
   if (!currentChat) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -131,7 +135,7 @@ const Conversation: React.FC<ConversationProps> = ({
       <div className="flex-1 overflow-y-auto">
         <MessageList
           messages={messages}
-          onDeleteMessage={deleteMessage}
+          onDelete={handleDeleteMessage}
           onReplyToMessage={handleReply}
         />
         
