@@ -64,7 +64,6 @@ const MessageThread: React.FC<MessageThreadProps> = ({
               message={reply}
               onDelete={handleDeleteMessage}
               onReply={undefined}
-              currentUserId={currentUserId}
               isReply
             />
           ))}

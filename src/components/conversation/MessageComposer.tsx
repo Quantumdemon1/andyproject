@@ -13,6 +13,8 @@ interface MessageComposerProps {
   onCancelReply?: () => void;
   threadId?: string;
   isMobile?: boolean;
+  placeholder?: string;
+  compact?: boolean;
 }
 
 const MessageComposer: React.FC<MessageComposerProps> = ({ 
@@ -20,7 +22,9 @@ const MessageComposer: React.FC<MessageComposerProps> = ({
   replyToMessage,
   onCancelReply,
   threadId,
-  isMobile = false 
+  isMobile = false,
+  placeholder = "Type a message...",
+  compact = false
 }) => {
   const [newMessage, setNewMessage] = useState("");
   const [attachmentUrl, setAttachmentUrl] = useState<string | undefined>();
@@ -90,7 +94,7 @@ const MessageComposer: React.FC<MessageComposerProps> = ({
       )}
 
       <AttachmentPreview 
-        attachmentUrl={attachmentUrl} 
+        url={attachmentUrl || ""} 
         onRemove={() => setAttachmentUrl(undefined)} 
       />
       
@@ -102,7 +106,7 @@ const MessageComposer: React.FC<MessageComposerProps> = ({
             </Button>
           </FileUpload>
           <Textarea
-            placeholder={replyToMessage ? "Type a reply..." : "Type a message..."}
+            placeholder={replyToMessage ? "Type a reply..." : placeholder}
             className="flex-1 bg-white/10 border-white/10 focus-visible:ring-aura-purple resize-none h-10 leading-tight pt-2"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}

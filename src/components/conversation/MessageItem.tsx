@@ -15,6 +15,8 @@ interface MessageItemProps {
   onReply?: (message: Message) => void;
   showAvatar?: boolean;
   isMobile?: boolean;
+  currentUserId?: string;
+  isReply?: boolean;
 }
 
 const MessageItem: React.FC<MessageItemProps> = ({ 
@@ -22,7 +24,9 @@ const MessageItem: React.FC<MessageItemProps> = ({
   onDelete, 
   onReply,
   showAvatar = true,
-  isMobile = false 
+  isMobile = false,
+  currentUserId,
+  isReply = false
 }) => {
   const [showActions, setShowActions] = useState(false);
   
@@ -86,9 +90,9 @@ const MessageItem: React.FC<MessageItemProps> = ({
     >
       {showAvatar && (
         <Avatar className={`${isMobile ? 'h-8 w-8' : 'h-10 w-10'} flex-shrink-0`}>
-          <AvatarImage src={undefined} alt="User" />
+          <AvatarImage src={message.avatar_url} alt="User" />
           <AvatarFallback className="bg-aura-purple text-white text-sm">
-            {message.isMe ? 'You' : 'U'}
+            {message.isMe ? 'You' : (message.username?.charAt(0).toUpperCase() || 'U')}
           </AvatarFallback>
         </Avatar>
       )}
@@ -96,7 +100,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
       <div className={`flex-1 min-w-0 ${message.isMe ? 'text-right' : ''}`}>
         <div className={`flex items-center gap-2 mb-1 ${message.isMe ? 'justify-end' : ''}`}>
           <span className={`font-medium text-sm ${isMobile ? 'text-xs' : ''}`}>
-            {message.isMe ? 'You' : 'User'}
+            {message.isMe ? 'You' : (message.username || 'User')}
           </span>
           <span className={`text-xs text-gray-400 ${isMobile ? 'text-[10px]' : ''}`}>
             {timeAgo}
