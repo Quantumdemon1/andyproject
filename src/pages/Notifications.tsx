@@ -6,12 +6,10 @@ import { Card } from "@/components/ui/card";
 import NotificationItem from "@/components/NotificationItem";
 import { fetchNotifications, markAllNotificationsAsRead, type Notification } from "@/api/notificationsApi";
 import { supabase } from "@/integrations/supabase/client";
-
-const SidebarContent = () => (
-  <div className="space-y-6">
+const SidebarContent = () => <div className="space-y-6">
     <Card className="bg-aura-charcoal border-white/10">
       <div className="p-4">
-        <h3 className="w-full bg-gradient-to-r from-aura-blue to-aura-purple hover:from-aura-purple hover:to-aura-blue transition-colors duration-300 text-white py-6">SUBSCRIPTION</h3>
+        <h3 className="w-full bg-gradient-to-r from-aura-blue to-aura-purple hover:from-aura-purple hover:to-aura-blue transition-colors duration-300 text-white py-6 px-[65px]">SUBSCRIPTION</h3>
         <div className="flex flex-col">
           <div className="flex justify-between items-center">
             <h3 className="font-medium">Subscription price and promotions</h3>
@@ -56,169 +54,135 @@ const SidebarContent = () => (
         </div>
       </div>
     </Card>
-  </div>
-);
-
+  </div>;
 const Notifications = () => {
   const [activeTab, setActiveTab] = useState("all");
   const queryClient = useQueryClient();
-
-  const { data: notifications = [], isLoading, error } = useQuery({
+  const {
+    data: notifications = [],
+    isLoading,
+    error
+  } = useQuery({
     queryKey: ['notifications'],
-    queryFn: fetchNotifications,
+    queryFn: fetchNotifications
   });
 
   // Set up real-time subscription for notifications
   useEffect(() => {
-    const channel = supabase
-      .channel('notifications-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications'
-        },
-        () => {
-          // Refetch notifications when new ones are added
-          queryClient.invalidateQueries({ queryKey: ['notifications'] });
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public', 
-          table: 'notifications'
-        },
-        () => {
-          // Refetch notifications when they are updated (e.g., marked as read)
-          queryClient.invalidateQueries({ queryKey: ['notifications'] });
-        }
-      )
-      .subscribe();
-
+    const channel = supabase.channel('notifications-changes').on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'notifications'
+    }, () => {
+      // Refetch notifications when new ones are added
+      queryClient.invalidateQueries({
+        queryKey: ['notifications']
+      });
+    }).on('postgres_changes', {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'notifications'
+    }, () => {
+      // Refetch notifications when they are updated (e.g., marked as read)
+      queryClient.invalidateQueries({
+        queryKey: ['notifications']
+      });
+    }).subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
   }, [queryClient]);
-
-  const tabs = [
-    { id: "all", label: "All", count: notifications.length },
-    { id: "subscriptions", label: "Subscriptions", count: notifications.filter(n => n.type === 'subscription').length },
-    { id: "purchases", label: "Purchases" },
-    { id: "tips", label: "Tips", count: notifications.filter(n => n.type === 'tip').length },
-    { id: "tags", label: "Tags" },
-    { id: "comments", label: "Comments", count: notifications.filter(n => n.type === 'comment').length },
-    { id: "mentions", label: "Mentions" }
-  ];
-
+  const tabs = [{
+    id: "all",
+    label: "All",
+    count: notifications.length
+  }, {
+    id: "subscriptions",
+    label: "Subscriptions",
+    count: notifications.filter(n => n.type === 'subscription').length
+  }, {
+    id: "purchases",
+    label: "Purchases"
+  }, {
+    id: "tips",
+    label: "Tips",
+    count: notifications.filter(n => n.type === 'tip').length
+  }, {
+    id: "tags",
+    label: "Tags"
+  }, {
+    id: "comments",
+    label: "Comments",
+    count: notifications.filter(n => n.type === 'comment').length
+  }, {
+    id: "mentions",
+    label: "Mentions"
+  }];
   const handleDismissNotification = (id: string) => {
     console.log(`Dismissed notification ${id}`);
     // Here you would implement the logic to dismiss a notification
   };
-
   const handleMarkAllAsRead = async () => {
     await markAllNotificationsAsRead();
-    queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    queryClient.invalidateQueries({
+      queryKey: ['notifications']
+    });
   };
-
-  const filteredNotifications = activeTab === "all" 
-    ? notifications 
-    : notifications.filter(notification => notification.type === activeTab);
+  const filteredNotifications = activeTab === "all" ? notifications : notifications.filter(notification => notification.type === activeTab);
 
   // Convert Notification type to NotificationItem props
   const convertNotificationToProps = (notification: Notification) => ({
     id: notification.id,
     type: notification.type as 'subscription' | 'like' | 'comment' | 'tip' | 'mention',
-    avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=faces&q=80", // Default avatar for now
+    avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=faces&q=80",
+    // Default avatar for now
     content: notification.content,
     timestamp: new Date(notification.created_at),
     isRead: !!notification.read_at,
     onDismiss: handleDismissNotification
   });
-
   if (isLoading) {
-    return (
-      <MainLayout title="NOTIFICATIONS" backButton settings rightSidebar={<SidebarContent />}>
+    return <MainLayout title="NOTIFICATIONS" backButton settings rightSidebar={<SidebarContent />}>
         <div className="flex items-center justify-center py-8">
           <p className="text-gray-400">Loading notifications...</p>
         </div>
-      </MainLayout>
-    );
+      </MainLayout>;
   }
-
   if (error) {
-    return (
-      <MainLayout title="NOTIFICATIONS" backButton settings rightSidebar={<SidebarContent />}>
+    return <MainLayout title="NOTIFICATIONS" backButton settings rightSidebar={<SidebarContent />}>
         <div className="flex items-center justify-center py-8">
           <p className="text-red-400">Failed to load notifications. Please try again.</p>
         </div>
-      </MainLayout>
-    );
+      </MainLayout>;
   }
-
-  return (
-    <MainLayout title="NOTIFICATIONS" backButton settings rightSidebar={<SidebarContent />}>
+  return <MainLayout title="NOTIFICATIONS" backButton settings rightSidebar={<SidebarContent />}>
       <div>
         <div className="mb-6">
           <div className="flex justify-between items-center mb-4">
             <div className="flex gap-2 overflow-x-auto pb-2">
-              {tabs.map(tab => (
-                <Button
-                  key={tab.id}
-                  variant="ghost"
-                  size="sm"
-                  className={`rounded-full flex items-center whitespace-nowrap ${
-                    activeTab === tab.id 
-                      ? "bg-aura-blue text-white" 
-                      : "bg-white/5 text-gray-300 hover:bg-white/10"
-                  }`}
-                  onClick={() => setActiveTab(tab.id)}
-                >
+              {tabs.map(tab => <Button key={tab.id} variant="ghost" size="sm" className={`rounded-full flex items-center whitespace-nowrap ${activeTab === tab.id ? "bg-aura-blue text-white" : "bg-white/5 text-gray-300 hover:bg-white/10"}`} onClick={() => setActiveTab(tab.id)}>
                   {tab.label}
-                  {tab.count && tab.count > 0 && (
-                    <span className="ml-1 bg-white/20 text-white text-xs rounded-full px-1.5 py-0.5">
+                  {tab.count && tab.count > 0 && <span className="ml-1 bg-white/20 text-white text-xs rounded-full px-1.5 py-0.5">
                       {tab.count}
-                    </span>
-                  )}
-                </Button>
-              ))}
+                    </span>}
+                </Button>)}
             </div>
-            {notifications.some(n => !n.read_at) && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleMarkAllAsRead}
-                className="text-aura-blue hover:bg-aura-blue/10"
-              >
+            {notifications.some(n => !n.read_at) && <Button variant="ghost" size="sm" onClick={handleMarkAllAsRead} className="text-aura-blue hover:bg-aura-blue/10">
                 Mark all as read
-              </Button>
-            )}
+              </Button>}
           </div>
         </div>
         
         <div className="bg-aura-charcoal rounded-lg border border-white/10 overflow-hidden">
-          {filteredNotifications.length === 0 ? (
-            <div className="p-8 text-center">
+          {filteredNotifications.length === 0 ? <div className="p-8 text-center">
               <p className="text-gray-400">
                 {activeTab === "all" ? "No notifications yet" : `No ${activeTab} notifications`}
               </p>
-            </div>
-          ) : (
-            <div className="divide-y divide-white/10">
-              {filteredNotifications.map(notification => (
-                <NotificationItem 
-                  key={notification.id} 
-                  {...convertNotificationToProps(notification)}
-                />
-              ))}
-            </div>
-          )}
+            </div> : <div className="divide-y divide-white/10">
+              {filteredNotifications.map(notification => <NotificationItem key={notification.id} {...convertNotificationToProps(notification)} />)}
+            </div>}
         </div>
       </div>
-    </MainLayout>
-  );
+    </MainLayout>;
 };
-
 export default Notifications;
