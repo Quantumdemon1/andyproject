@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 interface MessageThreadProps {
   parentMessage: Message;
   replies: Message[];
+  conversationId: string;
   onSendReply: (content: string, attachmentUrl?: string) => Promise<void>;
   onDeleteMessage: (messageId: string) => Promise<void>;
   onAddReaction: (messageId: string, emoji: string) => void;
@@ -19,6 +20,7 @@ interface MessageThreadProps {
 const MessageThread: React.FC<MessageThreadProps> = ({
   parentMessage,
   replies,
+  conversationId,
   onSendReply,
   onDeleteMessage,
   onAddReaction,
@@ -84,6 +86,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
           <div className="mt-2">
             <MessageComposer
               onSendMessage={handleSendReply}
+              conversationId={conversationId}
               placeholder="Reply to thread..."
               compact
             />
