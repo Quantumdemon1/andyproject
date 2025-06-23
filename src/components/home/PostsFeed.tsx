@@ -5,6 +5,8 @@ import { fetchPosts } from '@/api/postsApi';
 import Post from '@/components/Post';
 import { Skeleton } from '@/components/ui/skeleton';
 import PostsPagination from './PostsPagination';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
 
 interface PostsFeedProps {
   filter?: string;
@@ -12,17 +14,21 @@ interface PostsFeedProps {
 
 const PostsFeed: React.FC<PostsFeedProps> = ({ filter = 'all' }) => {
   const [currentPage, setCurrentPage] = useState(1);
+  const [retryCount, setRetryCount] = useState(0);
   const queryClient = useQueryClient();
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['posts', currentPage, filter],
     queryFn: () => fetchPosts(currentPage, 10, filter),
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes (formerly cacheTime)
+    retry: 3,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+    setRetryCount(0);
     // Prefetch next and previous pages for better UX
     if (data && page < data.totalPages) {
       queryClient.prefetchQuery({
@@ -40,9 +46,15 @@ const PostsFeed: React.FC<PostsFeedProps> = ({ filter = 'all' }) => {
     }
   };
 
+  const handleRetry = () => {
+    setRetryCount(prev => prev + 1);
+    refetch();
+  };
+
   // Reset to page 1 when filter changes
   React.useEffect(() => {
     setCurrentPage(1);
+    setRetryCount(0);
   }, [filter]);
 
   if (isLoading) {
@@ -71,8 +83,24 @@ const PostsFeed: React.FC<PostsFeedProps> = ({ filter = 'all' }) => {
 
   if (error) {
     return (
-      <div className="text-center py-8">
-        <p className="text-gray-400">Failed to load posts. Please try again later.</p>
+      <div className="text-center py-8 space-y-4">
+        <p className="text-gray-400">Failed to load posts.</p>
+        <div className="space-y-2">
+          <p className="text-sm text-gray-500">
+            {error instanceof Error ? error.message : 'Please try again later.'}
+          </p>
+          {retryCount < 3 && (
+            <Button
+              onClick={handleRetry}
+              variant="outline"
+              size="sm"
+              className="flex items-center space-x-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              <span>Retry ({retryCount + 1}/3)</span>
+            </Button>
+          )}
+        </div>
       </div>
     );
   }
@@ -88,6 +116,16 @@ const PostsFeed: React.FC<PostsFeedProps> = ({ filter = 'all' }) => {
     return (
       <div className="text-center py-8">
         <p className="text-gray-400">{emptyMessages[filter as keyof typeof emptyMessages] || emptyMessages.all}</p>
+        {filter !== 'all' && (
+          <Button
+            onClick={() => handlePageChange(1)}
+            variant="ghost"
+            size="sm"
+            className="mt-2 text-aura-blue hover:text-aura-blue/80"
+          >
+            Refresh
+          </Button>
+        )}
       </div>
     );
   }
