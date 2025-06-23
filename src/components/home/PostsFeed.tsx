@@ -73,19 +73,19 @@ const PostsFeed: React.FC<PostsFeedProps> = ({ filter = 'all' }) => {
       <PerformanceMonitor componentName="PostsFeedLoading">
         <div className="space-y-6">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="bg-aura-charcoal rounded-lg border border-white/10 p-6">
+            <div key={i} className="bg-card rounded-lg border p-6">
               <div className="flex items-center space-x-3 mb-4">
-                <Skeleton className="h-10 w-10 rounded-full bg-white/10" />
+                <Skeleton className="h-10 w-10 rounded-full" />
                 <div className="space-y-2">
-                  <Skeleton className="h-4 w-32 bg-white/10" />
-                  <Skeleton className="h-3 w-20 bg-white/10" />
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-20" />
                 </div>
               </div>
-              <Skeleton className="h-20 w-full mb-4 bg-white/10" />
+              <Skeleton className="h-20 w-full mb-4" />
               <div className="flex space-x-4">
-                <Skeleton className="h-8 w-16 bg-white/10" />
-                <Skeleton className="h-8 w-16 bg-white/10" />
-                <Skeleton className="h-8 w-16 bg-white/10" />
+                <Skeleton className="h-8 w-16" />
+                <Skeleton className="h-8 w-16" />
+                <Skeleton className="h-8 w-16" />
               </div>
             </div>
           ))}
@@ -98,9 +98,9 @@ const PostsFeed: React.FC<PostsFeedProps> = ({ filter = 'all' }) => {
     return (
       <ErrorBoundary>
         <div className="text-center py-8 space-y-4">
-          <p className="text-gray-400">Failed to load posts.</p>
+          <p className="text-muted-foreground">Failed to load posts.</p>
           <div className="space-y-2">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-muted-foreground">
               {error instanceof Error ? error.message : 'Please try again later.'}
             </p>
             {retryCount < 3 && (
@@ -131,12 +131,12 @@ const PostsFeed: React.FC<PostsFeedProps> = ({ filter = 'all' }) => {
     return (
       <PerformanceMonitor componentName="PostsFeedEmpty">
         <div className="text-center py-8">
-          <p className="text-gray-400">{emptyMessages[filter as keyof typeof emptyMessages] || emptyMessages.all}</p>
+          <p className="text-muted-foreground">{emptyMessages[filter as keyof typeof emptyMessages] || emptyMessages.all}</p>
           <Button
             onClick={() => refetch()}
             variant="ghost"
             size="sm"
-            className="mt-2 text-aura-blue hover:text-aura-blue/80"
+            className="mt-2"
           >
             Refresh
           </Button>
@@ -158,13 +158,13 @@ const PostsFeed: React.FC<PostsFeedProps> = ({ filter = 'all' }) => {
           {/* Infinite scroll trigger */}
           <div ref={loadMoreRef} className="flex justify-center py-4">
             {isFetchingNextPage && (
-              <div className="flex items-center space-x-2 text-gray-400">
+              <div className="flex items-center space-x-2 text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 <span>Loading more posts...</span>
               </div>
             )}
             {!hasNextPage && allPosts.length > 0 && (
-              <p className="text-gray-500 text-sm">You've reached the end</p>
+              <p className="text-muted-foreground text-sm">You've reached the end</p>
             )}
           </div>
         </div>

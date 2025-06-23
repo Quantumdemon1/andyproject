@@ -1,98 +1,71 @@
 
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import React, { useState } from 'react';
+import { Search, Bell, MessageCircle, Settings } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import {
-  Search,
-  User,
-  LogOut,
-} from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import SearchCommand from '@/components/search/SearchCommand';
+import { Badge } from '@/components/ui/badge';
+import SearchCommand from './search/SearchCommand';
+import ThemeToggle from './ThemeToggle';
 
-const Header = () => {
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
-  const [searchOpen, setSearchOpen] = useState(false);
+interface HeaderProps {
+  searchBar?: boolean;
+  icons?: boolean;
+}
 
-  const handleLogout = async () => {
-    await signOut();
-    navigate('/login');
-  };
-
-  const handleSearchShortcut = (e: KeyboardEvent) => {
-    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-      e.preventDefault();
-      setSearchOpen(true);
-    }
-  };
-
-  useEffect(() => {
-    document.addEventListener('keydown', handleSearchShortcut);
-    return () => document.removeEventListener('keydown', handleSearchShortcut);
-  }, []);
+const Header: React.FC<HeaderProps> = ({ searchBar = true, icons = true }) => {
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   return (
-    <>
-      <header className="fixed top-0 left-0 right-0 z-50 bg-aura-charcoal border-b border-white/10">
-        <div className="flex items-center justify-between px-4 sm:px-6 h-16">
-          {/* Logo */}
-          <Link to="/" className="text-xl font-bold bg-gradient-to-r from-aura-blue to-aura-purple bg-clip-text text-transparent">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-14 items-center">
+        <div className="mr-4 hidden md:flex">
+          <span className="font-bold text-xl bg-gradient-to-r from-aura-blue to-aura-purple bg-clip-text text-transparent">
             AURA
-          </Link>
+          </span>
+        </div>
 
-          {/* Search Button */}
-          <div className="flex-1 max-w-md mx-4">
-            <Button
-              variant="outline"
-              className="w-full justify-start text-gray-400 bg-aura-charcoal border-white/10 hover:bg-white/5"
-              onClick={() => setSearchOpen(true)}
-            >
-              <Search className="mr-2 h-4 w-4" />
-              <span className="hidden sm:inline">Search...</span>
-              <span className="ml-auto hidden sm:inline text-xs">⌘K</span>
-            </Button>
+        {searchBar && (
+          <div className="flex-1 mx-4">
+            <div className="relative max-w-md">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search..."
+                className="pl-8"
+                onClick={() => setIsSearchOpen(true)}
+                readOnly
+              />
+            </div>
+            <SearchCommand open={isSearchOpen} onOpenChange={setIsSearchOpen} />
           </div>
+        )}
 
-          {/* User Menu */}
-          {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0 rounded-full">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.user_metadata?.avatar_url || undefined} alt={user?.email || "User Avatar"} />
-                    <AvatarFallback>{user?.email ? user.email[0].toUpperCase() : "U"}</AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56 mr-2" align="end" forceMount>
-                <DropdownMenuItem onClick={() => navigate(`/profile/${user.id}`)} >
-                  <User className="h-4 w-4 mr-2" />
-                  <span>Profile</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleLogout}>
-                  <LogOut className="h-4 w-4 mr-2" />
-                  <span>Log out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <Link to="/login">
-              <Button variant="outline">Log In</Button>
-            </Link>
+        <div className="flex items-center space-x-2">
+          <ThemeToggle />
+          
+          {icons && (
+            <>
+              <Button variant="ghost" size="icon" className="relative">
+                <Bell className="h-5 w-5" />
+                <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center text-xs">
+                  3
+                </Badge>
+              </Button>
+
+              <Button variant="ghost" size="icon" className="relative">
+                <MessageCircle className="h-5 w-5" />
+                <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center text-xs">
+                  2
+                </Badge>
+              </Button>
+
+              <Button variant="ghost" size="icon">
+                <Settings className="h-5 w-5" />
+              </Button>
+            </>
           )}
         </div>
-      </header>
-
-      <SearchCommand open={searchOpen} onOpenChange={setSearchOpen} />
-    </>
+      </div>
+    </header>
   );
 };
 
