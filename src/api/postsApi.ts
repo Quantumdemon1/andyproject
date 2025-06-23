@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 
@@ -67,7 +66,7 @@ export async function fetchPosts(
         }
         break;
       case 'media':
-        // Only posts with images or videos
+        // Only posts with images or videos - fix the .or() method call
         query = query.or('image_url.not.is.null,video_url.not.is.null');
         break;
       case 'recent':
