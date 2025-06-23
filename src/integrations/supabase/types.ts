@@ -143,6 +143,27 @@ export type Database = {
         }
         Relationships: []
       }
+      followers: {
+        Row: {
+          created_at: string
+          follower_id: string
+          following_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          following_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          following_id?: string
+          id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           attachment_url: string | null
@@ -212,6 +233,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      posts: {
+        Row: {
+          comments_count: number | null
+          content: string
+          created_at: string
+          id: string
+          image_url: string | null
+          likes_count: number | null
+          updated_at: string
+          user_id: string
+          video_url: string | null
+        }
+        Insert: {
+          comments_count?: number | null
+          content: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          likes_count?: number | null
+          updated_at?: string
+          user_id: string
+          video_url?: string | null
+        }
+        Update: {
+          comments_count?: number | null
+          content?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          likes_count?: number | null
+          updated_at?: string
+          user_id?: string
+          video_url?: string | null
+        }
+        Relationships: []
       }
       stripe_accounts: {
         Row: {
@@ -285,26 +342,35 @@ export type Database = {
       user_profiles: {
         Row: {
           avatar_url: string | null
+          bio: string | null
           cover_url: string | null
+          display_name: string | null
           id: string
           is_online: boolean | null
           last_seen: string | null
+          tags: string | null
           username: string | null
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
           cover_url?: string | null
+          display_name?: string | null
           id: string
           is_online?: boolean | null
           last_seen?: string | null
+          tags?: string | null
           username?: string | null
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
           cover_url?: string | null
+          display_name?: string | null
           id?: string
           is_online?: boolean | null
           last_seen?: string | null
+          tags?: string | null
           username?: string | null
         }
         Relationships: []
@@ -314,6 +380,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_conversations: {
+        Args: { user_uuid: string }
+        Returns: {
+          conversation_id: string
+          conversation_name: string
+          is_group: boolean
+          conversation_created_at: string
+          conversation_updated_at: string
+          last_message_content: string
+          last_message_created_at: string
+          last_message_status: string
+          participant_count: number
+          other_participant_username: string
+          other_participant_avatar_url: string
+          other_participant_is_online: boolean
+        }[]
+      }
       update_message_status: {
         Args: { _message_id: string; _status: string }
         Returns: undefined

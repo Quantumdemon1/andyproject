@@ -2,35 +2,58 @@
 import { User } from "@supabase/supabase-js";
 
 /**
- * Helper function to determine user role based on email
+ * Determines user role based on email address
  */
-export const determineUserRole = (email: string | undefined): 'admin' | 'user' | null => {
+export const determineUserRole = (email?: string): 'admin' | 'user' | null => {
   if (!email) return null;
-  if (email === 'admin@example.com') return 'admin';
-  return 'user';
+  
+  // Check if user is admin based on email
+  const adminEmails = ['admin@example.com']; // Update with actual admin emails
+  return adminEmails.includes(email) ? 'admin' : 'user';
 };
 
 /**
- * Type definitions for authentication operations
- */
-export interface AuthError {
-  message: string;
-}
-
-export interface AuthResult<T> {
-  data: T | null;
-  error: Error | null;
-}
-
-export interface SignUpResult {
-  user: User | null;
-  session: any;
-}
-
-/**
- * Check if user is authenticated for direct access mode
- * This is used for development/testing without requiring full authentication
+ * Check if direct access is enabled (development only)
+ * This will be disabled in production builds
  */
 export const isDirectAccessEnabled = (): boolean => {
-  return sessionStorage.getItem('direct_access') === 'true';
+  // Only allow direct access in development mode
+  if (import.meta.env.PROD) {
+    return false;
+  }
+  
+  // Check for direct access flag in development
+  return import.meta.env.DEV && sessionStorage.getItem('directAccess') === 'true';
+};
+
+/**
+ * Enable direct access (development only)
+ */
+export const enableDirectAccess = (): void => {
+  if (import.meta.env.DEV) {
+    sessionStorage.setItem('directAccess', 'true');
+  }
+};
+
+/**
+ * Disable direct access
+ */
+export const disableDirectAccess = (): void => {
+  sessionStorage.removeItem('directAccess');
+};
+
+/**
+ * Check if user has required role
+ */
+export const hasRequiredRole = (user: User | null, requiredRole?: 'admin' | 'user'): boolean => {
+  if (!requiredRole) return true;
+  if (!user) return false;
+  
+  const userRole = determineUserRole(user.email);
+  
+  if (requiredRole === 'admin') {
+    return userRole === 'admin';
+  }
+  
+  return userRole === 'admin' || userRole === 'user';
 };

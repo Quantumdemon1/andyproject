@@ -1,61 +1,41 @@
 
-import React, { useEffect, useState } from "react";
-import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { Navigate } from "react-router-dom";
+import { ReactNode } from "react";
+import { hasRequiredRole, isDirectAccessEnabled } from "@/utils/authUtils";
 
 interface PrivateRouteProps {
-  children: React.ReactNode;
+  children: ReactNode;
   requiredRole?: 'admin' | 'user';
 }
 
-const PrivateRoute: React.FC<PrivateRouteProps> = ({ children, requiredRole }) => {
-  const { user, loading, userRole } = useAuth();
-  const location = useLocation();
-  const [bypassAuth, setBypassAuth] = useState(false);
-  
-  // Check if we're coming from the login page with the bypass flag
-  useEffect(() => {
-    // Check if we have a bypass flag in sessionStorage
-    const hasDirectAccess = sessionStorage.getItem('direct_access') === 'true';
-    if (hasDirectAccess) {
-      console.log("Direct access enabled, bypassing authentication");
-      setBypassAuth(true);
-    }
-    
-    // If we're at the home route and came from login, consider it a direct access
-    if (location.pathname === '/home' && document.referrer.includes('/login')) {
-      console.log("Coming from login to home, setting direct access");
-      sessionStorage.setItem('direct_access', 'true');
-      setBypassAuth(true);
-    }
-  }, [location]);
+const PrivateRoute = ({ children, requiredRole }: PrivateRouteProps) => {
+  const { user, loading } = useAuth();
 
-  // Show loading state if auth is still initializing
-  if (loading && !bypassAuth) {
+  if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-aura-darkPurple">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-aura-blue border-t-transparent"></div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
       </div>
     );
   }
 
-  // Allow access if user is authenticated OR we have bypass
-  if (!user && !bypassAuth) {
-    console.log("No user and no bypass, redirecting to login");
-    return <Navigate to="/login" replace />;
+  // Allow direct access only in development mode
+  if (isDirectAccessEnabled()) {
+    console.log("Direct access enabled - bypassing authentication");
+    return <>{children}</>;
   }
 
-  // Check role requirements if specified and not bypassing
-  if (requiredRole && userRole !== requiredRole && !bypassAuth) {
-    // If admin role is required but user isn't admin, redirect to home
-    if (requiredRole === 'admin') {
-      console.log("Admin role required but not admin, redirecting to home");
-      return <Navigate to="/home" replace />;
-    }
+  // Check authentication
+  if (!user) {
+    return <Navigate to="/login" />;
   }
 
-  // Render children if authenticated and meets role requirements
-  console.log("Access granted to:", location.pathname);
+  // Check role requirements
+  if (!hasRequiredRole(user, requiredRole)) {
+    return <Navigate to="/home" />;
+  }
+
   return <>{children}</>;
 };
 

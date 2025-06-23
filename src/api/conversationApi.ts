@@ -3,126 +3,43 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 import { Conversation } from '@/types/messaging';
 
-export async function fetchConversations(userId: string) {
+export async function fetchConversations(userId: string): Promise<Conversation[]> {
   try {
-    // Fetch conversations the user is part of
-    const { data: participantData, error: participantError } = await supabase
-      .from('conversation_participants')
-      .select('conversation_id')
-      .eq('user_id', userId);
-
-    if (participantError) throw participantError;
-
-    const conversationIds = participantData.map(p => p.conversation_id);
-    if (conversationIds.length === 0) {
-      return [];
-    }
-
-    // Fetch conversations details
-    const { data: conversationsData, error: conversationsError } = await supabase
-      .from('conversations')
-      .select('*')
-      .in('id', conversationIds);
-
-    if (conversationsError) throw conversationsError;
-
-    // Fetch pinned conversations
-    const { data: pinnedData, error: pinnedError } = await supabase
-      .from('pinned_conversations')
-      .select('conversation_id')
-      .eq('user_id', userId);
-
-    if (pinnedError) throw pinnedError;
-    
-    const pinnedIds = pinnedData.map(p => p.conversation_id);
-
-    // Fetch last message for each conversation
-    const enrichedConversations = await Promise.all(
-      conversationsData.map(async (conv) => {
-        // Get last message
-        const { data: lastMessageData, error: lastMessageError } = await supabase
-          .from('messages')
-          .select('content, created_at, status')
-          .eq('conversation_id', conv.id)
-          .order('created_at', { ascending: false })
-          .limit(1);
-
-        if (lastMessageError) throw lastMessageError;
-        
-        const lastMessage = lastMessageData?.[0] || null;
-
-        // Get participants
-        const { data: participantsData, error: participantsError } = await supabase
-          .from('conversation_participants')
-          .select('id, user_id')
-          .eq('conversation_id', conv.id);
-
-        if (participantsError) throw participantsError;
-
-        // Fetch user profiles for participants
-        const participants = [];
-        for (const participant of participantsData) {
-          const { data: userProfile, error: userProfileError } = await supabase
-            .from('user_profiles')
-            .select('username, avatar_url, is_online')
-            .eq('id', participant.user_id)
-            .single();
-          
-          if (userProfileError) {
-            console.error('Error fetching user profile:', userProfileError);
-            // Add participant with minimal data if profile fetch fails
-            participants.push({
-              id: participant.id,
-              user_id: participant.user_id
-            });
-          } else {
-            participants.push({
-              id: participant.id,
-              user_id: participant.user_id,
-              username: userProfile.username,
-              avatar_url: userProfile.avatar_url,
-              is_online: userProfile.is_online || false
-            });
-          }
-        }
-
-        // For direct messages, use the other user's profile for display
-        let name = conv.name;
-        let avatar_url;
-        let is_online = false;
-        
-        if (!conv.is_group) {
-          const otherUser = participants.find(p => p.user_id !== userId);
-          if (otherUser) {
-            name = name || otherUser.username || 'User';
-            avatar_url = otherUser.avatar_url;
-            is_online = otherUser.is_online || false;
-          }
-        } else {
-          // Group chat - use first 2 avatars or default
-          avatar_url = participants[0]?.avatar_url;
-        }
-
-        return {
-          ...conv,
-          name,
-          avatar_url,
-          is_online,
-          participants,
-          lastMessage,
-          isPinned: pinnedIds.includes(conv.id)
-        };
-      })
-    );
-
-    // Sort conversations by latest message
-    enrichedConversations.sort((a, b) => {
-      const aDate = a.lastMessage?.created_at || a.updated_at;
-      const bDate = b.lastMessage?.created_at || b.updated_at;
-      return new Date(bDate).getTime() - new Date(aDate).getTime();
+    // Use the optimized function to fetch all conversation data in one query
+    const { data, error } = await supabase.rpc('get_user_conversations', {
+      user_uuid: userId
     });
 
-    return enrichedConversations;
+    if (error) throw error;
+
+    // Transform the data to match our Conversation type
+    const conversations: Conversation[] = data.map((row: any) => ({
+      id: row.conversation_id,
+      name: row.conversation_name,
+      isGroup: row.is_group,
+      createdAt: row.conversation_created_at,
+      updatedAt: row.conversation_updated_at,
+      participants: [{
+        id: userId,
+        username: 'You',
+        avatarUrl: '',
+        isOnline: true
+      }],
+      otherParticipant: row.other_participant_username ? {
+        id: 'other-user',
+        username: row.other_participant_username,
+        avatarUrl: row.other_participant_avatar_url,
+        isOnline: row.other_participant_is_online
+      } : undefined,
+      lastMessage: row.last_message_content ? {
+        content: row.last_message_content,
+        created_at: row.last_message_created_at,
+        status: row.last_message_status as 'sent' | 'delivered' | 'read'
+      } : undefined,
+      isPinned: false // This will be set by the pinned conversations logic
+    }));
+
+    return conversations;
   } catch (error) {
     console.error('Error fetching conversations:', error);
     toast({
@@ -134,16 +51,20 @@ export async function fetchConversations(userId: string) {
   }
 }
 
-export async function togglePinConversation(userId: string, conversationId: string, isPinned: boolean) {
+export async function togglePinConversation(
+  userId: string, 
+  conversationId: string, 
+  isPinned: boolean
+): Promise<boolean> {
   try {
     if (isPinned) {
       // Unpin the conversation
       const { error } = await supabase
         .from('pinned_conversations')
         .delete()
-        .eq('conversation_id', conversationId)
-        .eq('user_id', userId);
-
+        .eq('user_id', userId)
+        .eq('conversation_id', conversationId);
+      
       if (error) throw error;
       return false;
     } else {
@@ -151,18 +72,18 @@ export async function togglePinConversation(userId: string, conversationId: stri
       const { error } = await supabase
         .from('pinned_conversations')
         .insert({
-          conversation_id: conversationId,
-          user_id: userId
+          user_id: userId,
+          conversation_id: conversationId
         });
-
+      
       if (error) throw error;
       return true;
     }
   } catch (error) {
-    console.error('Error toggling pin:', error);
+    console.error('Error toggling pin status:', error);
     toast({
       title: 'Error',
-      description: 'Failed to update pinned conversation',
+      description: 'Failed to update conversation pin status',
       variant: 'destructive'
     });
     throw error;
