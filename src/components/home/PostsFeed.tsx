@@ -7,6 +7,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import PostsPagination from './PostsPagination';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
+import ErrorBoundary from '@/components/ErrorBoundary';
+import PerformanceMonitor from '@/components/PerformanceMonitor';
 
 interface PostsFeedProps {
   filter?: string;
@@ -59,49 +61,53 @@ const PostsFeed: React.FC<PostsFeedProps> = ({ filter = 'all' }) => {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="bg-aura-charcoal rounded-lg border border-white/10 p-6">
-            <div className="flex items-center space-x-3 mb-4">
-              <Skeleton className="h-10 w-10 rounded-full bg-white/10" />
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-32 bg-white/10" />
-                <Skeleton className="h-3 w-20 bg-white/10" />
+      <PerformanceMonitor componentName="PostsFeedLoading">
+        <div className="space-y-6">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="bg-aura-charcoal rounded-lg border border-white/10 p-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <Skeleton className="h-10 w-10 rounded-full bg-white/10" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-32 bg-white/10" />
+                  <Skeleton className="h-3 w-20 bg-white/10" />
+                </div>
+              </div>
+              <Skeleton className="h-20 w-full mb-4 bg-white/10" />
+              <div className="flex space-x-4">
+                <Skeleton className="h-8 w-16 bg-white/10" />
+                <Skeleton className="h-8 w-16 bg-white/10" />
+                <Skeleton className="h-8 w-16 bg-white/10" />
               </div>
             </div>
-            <Skeleton className="h-20 w-full mb-4 bg-white/10" />
-            <div className="flex space-x-4">
-              <Skeleton className="h-8 w-16 bg-white/10" />
-              <Skeleton className="h-8 w-16 bg-white/10" />
-              <Skeleton className="h-8 w-16 bg-white/10" />
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      </PerformanceMonitor>
     );
   }
 
   if (error) {
     return (
-      <div className="text-center py-8 space-y-4">
-        <p className="text-gray-400">Failed to load posts.</p>
-        <div className="space-y-2">
-          <p className="text-sm text-gray-500">
-            {error instanceof Error ? error.message : 'Please try again later.'}
-          </p>
-          {retryCount < 3 && (
-            <Button
-              onClick={handleRetry}
-              variant="outline"
-              size="sm"
-              className="flex items-center space-x-2"
-            >
-              <RefreshCw className="h-4 w-4" />
-              <span>Retry ({retryCount + 1}/3)</span>
-            </Button>
-          )}
+      <ErrorBoundary>
+        <div className="text-center py-8 space-y-4">
+          <p className="text-gray-400">Failed to load posts.</p>
+          <div className="space-y-2">
+            <p className="text-sm text-gray-500">
+              {error instanceof Error ? error.message : 'Please try again later.'}
+            </p>
+            {retryCount < 3 && (
+              <Button
+                onClick={handleRetry}
+                variant="outline"
+                size="sm"
+                className="flex items-center space-x-2"
+              >
+                <RefreshCw className="h-4 w-4" />
+                <span>Retry ({retryCount + 1}/3)</span>
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
+      </ErrorBoundary>
     );
   }
 
@@ -114,37 +120,45 @@ const PostsFeed: React.FC<PostsFeedProps> = ({ filter = 'all' }) => {
     };
 
     return (
-      <div className="text-center py-8">
-        <p className="text-gray-400">{emptyMessages[filter as keyof typeof emptyMessages] || emptyMessages.all}</p>
-        {filter !== 'all' && (
-          <Button
-            onClick={() => handlePageChange(1)}
-            variant="ghost"
-            size="sm"
-            className="mt-2 text-aura-blue hover:text-aura-blue/80"
-          >
-            Refresh
-          </Button>
-        )}
-      </div>
+      <PerformanceMonitor componentName="PostsFeedEmpty">
+        <div className="text-center py-8">
+          <p className="text-gray-400">{emptyMessages[filter as keyof typeof emptyMessages] || emptyMessages.all}</p>
+          {filter !== 'all' && (
+            <Button
+              onClick={() => handlePageChange(1)}
+              variant="ghost"
+              size="sm"
+              className="mt-2 text-aura-blue hover:text-aura-blue/80"
+            >
+              Refresh
+            </Button>
+          )}
+        </div>
+      </PerformanceMonitor>
     );
   }
 
   return (
-    <div>
-      <div className="space-y-6">
-        {data.posts.map((post) => (
-          <Post key={post.id} post={post} />
-        ))}
-      </div>
-      
-      <PostsPagination
-        currentPage={currentPage}
-        totalPages={data.totalPages}
-        onPageChange={handlePageChange}
-        isLoading={isLoading}
-      />
-    </div>
+    <PerformanceMonitor componentName="PostsFeed" threshold={200}>
+      <ErrorBoundary>
+        <div>
+          <div className="space-y-6">
+            {data.posts.map((post) => (
+              <ErrorBoundary key={post.id}>
+                <Post post={post} />
+              </ErrorBoundary>
+            ))}
+          </div>
+          
+          <PostsPagination
+            currentPage={currentPage}
+            totalPages={data.totalPages}
+            onPageChange={handlePageChange}
+            isLoading={isLoading}
+          />
+        </div>
+      </ErrorBoundary>
+    </PerformanceMonitor>
   );
 };
 

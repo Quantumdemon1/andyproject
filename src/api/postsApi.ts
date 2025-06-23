@@ -43,6 +43,8 @@ export async function fetchPosts(
   limit: number = POSTS_PER_PAGE,
   filter: string = 'all'
 ): Promise<PostsResponse> {
+  const startTime = performance.now();
+  
   try {
     console.log(`Fetching posts: page ${page}, filter: ${filter}`);
     const offset = (page - 1) * limit;
@@ -232,7 +234,8 @@ export async function fetchPosts(
     const totalPages = Math.ceil((totalCount || 0) / limit);
     const hasMore = page < totalPages;
 
-    console.log(`Returning ${posts.length} posts, page ${page}/${totalPages}`);
+    const endTime = performance.now();
+    console.log(`Posts fetched in ${endTime - startTime}ms - ${posts.length} posts, page ${page}/${totalPages}`);
 
     return {
       posts,
@@ -242,7 +245,8 @@ export async function fetchPosts(
       hasMore,
     };
   } catch (error) {
-    console.error('Error fetching posts:', error);
+    const endTime = performance.now();
+    console.error(`Posts fetch failed in ${endTime - startTime}ms:`, error);
     
     // More specific error messages
     let errorMessage = 'Failed to load posts';
