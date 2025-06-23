@@ -45,24 +45,44 @@ export async function fetchAllPosts(page: number = 1, limit: number = 20): Promi
 
     if (countError) throw countError;
 
-    // Get posts with author info
+    // Get posts first
     const { data: postsData, error: postsError } = await supabase
       .from('posts')
-      .select(`
-        *,
-        user_profiles!posts_user_id_fkey (
-          username,
-          display_name,
-          avatar_url
-        )
-      `)
+      .select('*')
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
     if (postsError) throw postsError;
 
-    // Get likes and comments counts
-    const postIds = postsData?.map(post => post.id) || [];
+    if (!postsData || postsData.length === 0) {
+      return { posts: [], totalCount: totalCount || 0, totalPages: 0 };
+    }
+
+    // Get unique user IDs
+    const userIds = [...new Set(postsData.map(post => post.user_id))];
+
+    // Get user profiles separately
+    const { data: profilesData, error: profilesError } = await supabase
+      .from('user_profiles')
+      .select('id, username, display_name, avatar_url')
+      .in('id', userIds);
+
+    if (profilesError) {
+      console.error('Error fetching user profiles:', profilesError);
+    }
+
+    // Create profiles map
+    const profilesMap = new Map();
+    if (profilesData) {
+      profilesData.forEach(profile => {
+        profilesMap.set(profile.id, profile);
+      });
+    }
+
+    // Get post IDs for batch likes/comments count
+    const postIds = postsData.map(post => post.id);
+    
+    // Batch fetch likes and comments counts
     const [likesResponse, commentsResponse] = await Promise.all([
       supabase
         .from('likes')
@@ -90,16 +110,19 @@ export async function fetchAllPosts(page: number = 1, limit: number = 20): Promi
       });
     }
 
-    const posts: AdminPost[] = postsData?.map(post => ({
-      ...post,
-      likes_count: likesCount.get(post.id) || 0,
-      comments_count: commentsCount.get(post.id) || 0,
-      author: {
-        username: post.user_profiles?.username || 'Unknown',
-        display_name: post.user_profiles?.display_name,
-        avatar_url: post.user_profiles?.avatar_url || '/placeholder.svg'
-      }
-    })) || [];
+    const posts: AdminPost[] = postsData.map(post => {
+      const profile = profilesMap.get(post.user_id);
+      return {
+        ...post,
+        likes_count: likesCount.get(post.id) || 0,
+        comments_count: commentsCount.get(post.id) || 0,
+        author: {
+          username: profile?.username || 'Unknown',
+          display_name: profile?.display_name,
+          avatar_url: profile?.avatar_url || '/placeholder.svg'
+        }
+      };
+    });
 
     return {
       posts,

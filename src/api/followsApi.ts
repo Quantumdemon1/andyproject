@@ -39,8 +39,14 @@ export async function followUser(userId: string): Promise<boolean> {
 
     if (error) throw error;
 
-    // Update follower count
-    await supabase.rpc('increment_follower_count', { user_id: userId });
+    // Update follower count using the database function
+    const { error: updateError } = await supabase.rpc('increment_follower_count', { 
+      user_id: userId 
+    });
+
+    if (updateError) {
+      console.error('Error updating follower count:', updateError);
+    }
 
     toast({
       title: 'Success',
@@ -86,8 +92,14 @@ export async function unfollowUser(userId: string): Promise<boolean> {
 
     if (error) throw error;
 
-    // Update follower count
-    await supabase.rpc('decrement_follower_count', { user_id: userId });
+    // Update follower count using the database function
+    const { error: updateError } = await supabase.rpc('decrement_follower_count', { 
+      user_id: userId 
+    });
+
+    if (updateError) {
+      console.error('Error updating follower count:', updateError);
+    }
 
     toast({
       title: 'Success',
