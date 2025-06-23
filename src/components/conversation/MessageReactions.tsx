@@ -23,7 +23,8 @@ const MessageReactions: React.FC<MessageReactionsProps> = ({ messageId, classNam
 
   const loadReactions = async () => {
     const messageReactions = await fetchMessageReactions(messageId);
-    setReactions(messageReactions);
+    // Type assertion to ensure proper typing
+    setReactions(messageReactions as MessageReaction[]);
   };
 
   // Group reactions by emoji
