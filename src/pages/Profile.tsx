@@ -28,78 +28,78 @@ const Profile = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
-  // Create a fallback profile for direct access mode
-  const fallbackProfile: UserProfile = {
-    id: 'demo-user',
-    username: 'demo_user',
-    avatar_url: null,
-    display_name: 'Demo User',
-    bio: 'This is a demo profile since you are in direct access mode.',
-    tags: 'demo,preview,testing',
-    is_online: true
+  const fetchProfile = async () => {
+    if (!user) {
+      setError("Please log in to view your profile");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setError(null);
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+        
+      if (error) {
+        throw error;
+      }
+      
+      setProfile(data);
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      setError("Failed to load profile information");
+      toast({
+        title: "Error",
+        description: "Failed to load profile information",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
   
   useEffect(() => {
-    async function fetchProfile() {
-      try {
-        // Check if in direct access mode (no authentication)
-        const hasDirectAccess = sessionStorage.getItem('direct_access') === 'true';
-        
-        if (!user && !hasDirectAccess) {
-          // If not in direct access and no user, we still want to show something
-          setTimeout(() => {
-            setProfile(fallbackProfile);
-            setLoading(false);
-          }, 500); // Small timeout to avoid flickering
-          return;
-        }
-        
-        if (!user && hasDirectAccess) {
-          // In direct access mode with no user, use fallback profile
-          setProfile(fallbackProfile);
-          setLoading(false);
-          return;
-        }
-        
-        if (user) {
-          // If we have a real user, fetch their profile
-          const { data, error } = await supabase
-            .from('user_profiles')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-            
-          if (error) {
-            console.error('Error fetching profile:', error);
-            // If there's an error fetching the profile, still show something
-            setProfile(fallbackProfile);
-          } else {
-            setProfile(data);
-          }
-        }
-      } catch (error) {
-        console.error('Error in profile fetch:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load profile information",
-          variant: "destructive",
-        });
-        // On error, use fallback profile
-        setProfile(fallbackProfile);
-      } finally {
-        setLoading(false);
-      }
-    }
-    
     fetchProfile();
-  }, [user, toast]);
+  }, [user]);
+
+  const handleProfileUpdate = (updatedData: Partial<UserProfile>) => {
+    if (profile) {
+      setProfile({ ...profile, ...updatedData });
+    }
+  };
+
+  const handleEditSuccess = () => {
+    setEditMode(false);
+    // Refetch profile data to ensure we have the latest information
+    fetchProfile();
+  };
 
   if (loading) {
     return <ProfileLoading />;
   }
 
-  if (editMode && profile) {
+  if (error || !profile) {
+    return (
+      <MainLayout title="PROFILE" backButton={true}>
+        <div className="p-6 text-center">
+          <p className="text-gray-400 mb-4">{error || "Profile not found"}</p>
+          <button 
+            onClick={fetchProfile}
+            className="text-blue-500 hover:text-blue-400"
+          >
+            Try Again
+          </button>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (editMode) {
     return (
       <MainLayout title="EDIT PROFILE" backButton={true}>
         <div className="p-6">
@@ -110,8 +110,9 @@ const Profile = () => {
               bio: profile.bio || "",
               tags: profile.tags || "",
             }}
-            onSuccess={() => setEditMode(false)}
+            onSuccess={handleEditSuccess}
             onCancel={() => setEditMode(false)}
+            onProfileUpdate={handleProfileUpdate}
           />
         </div>
       </MainLayout>
