@@ -10,6 +10,7 @@ export interface Comment {
   parent_comment_id?: string;
   created_at: string;
   updated_at: string;
+  is_deleted: boolean;
   author?: {
     username: string;
     avatar_url: string;
@@ -23,6 +24,7 @@ export async function fetchComments(postId: string): Promise<Comment[]> {
       .from('comments')
       .select('*')
       .eq('post_id', postId)
+      .eq('is_deleted', false)
       .order('created_at', { ascending: true });
 
     if (commentsError) throw commentsError;
@@ -87,7 +89,8 @@ export async function createComment(postId: string, content: string): Promise<Co
       .insert({
         post_id: postId,
         user_id: user.id,
-        content: content.trim()
+        content: content.trim(),
+        is_deleted: false
       })
       .select()
       .single();
@@ -132,7 +135,8 @@ export async function getCommentsCount(postId: string): Promise<number> {
     const { count, error } = await supabase
       .from('comments')
       .select('*', { count: 'exact', head: true })
-      .eq('post_id', postId);
+      .eq('post_id', postId)
+      .eq('is_deleted', false);
 
     if (error) throw error;
     return count || 0;

@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 
@@ -114,8 +115,11 @@ export async function fetchPosts(
         break;
     }
 
-    // Get total count first for pagination - use separate query for count
-    let countQuery = supabase.from('posts').select('id', { count: 'exact' });
+    // Add where clause to filter out deleted posts
+    query = query.eq('is_deleted', false);
+
+    // Get total count first for pagination
+    let countQuery = supabase.from('posts').select('id', { count: 'exact' }).eq('is_deleted', false);
     
     // Apply the same filters to count query
     switch (filter) {
@@ -234,6 +238,7 @@ export async function fetchPosts(
         .from('comments')
         .select('post_id')
         .in('post_id', postIds)
+        .eq('is_deleted', false)
     ]);
 
     if (likesResponse.error) {
@@ -331,7 +336,8 @@ export async function createPost(content: string, imageUrl?: string, videoUrl?: 
         content,
         image_url: imageUrl,
         video_url: videoUrl,
-        user_id: user.id
+        user_id: user.id,
+        is_deleted: false
       })
       .select()
       .single();
@@ -347,6 +353,8 @@ export async function createPost(content: string, imageUrl?: string, videoUrl?: 
 
     const post: Post = {
       ...postData,
+      likes_count: 0,
+      comments_count: 0,
       author: profileData ? {
         username: profileData.username,
         avatar_url: profileData.avatar_url,
@@ -376,7 +384,8 @@ export async function getUserPostCount(userId: string): Promise<number> {
     const { count, error } = await supabase
       .from('posts')
       .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId);
+      .eq('user_id', userId)
+      .eq('is_deleted', false);
 
     if (error) throw error;
     return count || 0;
