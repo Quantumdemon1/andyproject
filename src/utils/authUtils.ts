@@ -13,6 +13,17 @@ export interface SignUpResult {
 }
 
 /**
+ * Check if direct access mode is enabled (for development/testing)
+ */
+export const isDirectAccessEnabled = (): boolean => {
+  // Check if direct access is enabled via sessionStorage or localStorage
+  return (
+    sessionStorage?.getItem('direct_access') === 'true' ||
+    localStorage?.getItem('direct_access') === 'true'
+  );
+};
+
+/**
  * Determines user role based on email address
  */
 export const determineUserRole = (email?: string): 'admin' | 'user' | null => {
