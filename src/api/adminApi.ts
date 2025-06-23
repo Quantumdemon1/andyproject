@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 
@@ -11,6 +10,7 @@ export interface AdminPost {
   user_id: string;
   likes_count: number;
   comments_count: number;
+  is_deleted: boolean;
   author: {
     username: string;
     display_name?: string;
@@ -38,14 +38,14 @@ export async function fetchAllPosts(page: number = 1, limit: number = 20): Promi
   try {
     const offset = (page - 1) * limit;
 
-    // Get total count
+    // Get total count (including soft deleted posts)
     const { count: totalCount, error: countError } = await supabase
       .from('posts')
       .select('*', { count: 'exact', head: true });
 
     if (countError) throw countError;
 
-    // Get posts first
+    // Get posts first (including soft deleted)
     const { data: postsData, error: postsError } = await supabase
       .from('posts')
       .select('*')
@@ -92,6 +92,7 @@ export async function fetchAllPosts(page: number = 1, limit: number = 20): Promi
         .from('comments')
         .select('post_id')
         .in('post_id', postIds)
+        .eq('is_deleted', false) // Only count non-deleted comments
     ]);
 
     // Count likes and comments per post
@@ -116,6 +117,7 @@ export async function fetchAllPosts(page: number = 1, limit: number = 20): Promi
         ...post,
         likes_count: likesCount.get(post.id) || 0,
         comments_count: commentsCount.get(post.id) || 0,
+        is_deleted: post.is_deleted || false,
         author: {
           username: profile?.username || 'Unknown',
           display_name: profile?.display_name,
@@ -140,12 +142,17 @@ export async function fetchAllPosts(page: number = 1, limit: number = 20): Promi
   }
 }
 
-export async function deletePost(postId: string): Promise<boolean> {
+export async function deletePost(postId: string, reason: string = 'Admin deletion'): Promise<boolean> {
   try {
-    const { error } = await supabase
-      .from('posts')
-      .delete()
-      .eq('id', postId);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    // Use the database function for consistent soft deletion
+    const { error } = await supabase.rpc('delete_content', {
+      _admin_id: user.id,
+      _reason: reason,
+      _post_id: postId
+    });
 
     if (error) throw error;
 
@@ -159,6 +166,49 @@ export async function deletePost(postId: string): Promise<boolean> {
     toast({
       title: 'Error',
       description: 'Failed to delete post',
+      variant: 'destructive'
+    });
+    return false;
+  }
+}
+
+export async function restorePost(postId: string, reason: string = 'Admin restoration'): Promise<boolean> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    // Restore post by updating soft delete fields
+    const { error } = await supabase
+      .from('posts')
+      .update({
+        is_deleted: false,
+        deleted_at: null,
+        deleted_by: null
+      })
+      .eq('id', postId);
+
+    if (error) throw error;
+
+    // Log the moderation action
+    await supabase
+      .from('moderation_actions')
+      .insert({
+        admin_id: user.id,
+        target_post_id: postId,
+        action_type: 'restore_post',
+        reason
+      });
+
+    toast({
+      title: 'Success',
+      description: 'Post restored successfully'
+    });
+    return true;
+  } catch (error) {
+    console.error('Error restoring post:', error);
+    toast({
+      title: 'Error',
+      description: 'Failed to restore post',
       variant: 'destructive'
     });
     return false;
@@ -217,12 +267,18 @@ export async function fetchAllUsers(page: number = 1, limit: number = 20): Promi
   }
 }
 
-export async function banUser(userId: string): Promise<boolean> {
+export async function banUser(userId: string, reason: string = 'Admin ban', durationHours?: number): Promise<boolean> {
   try {
-    const { error } = await supabase
-      .from('user_profiles')
-      .update({ is_banned: true })
-      .eq('id', userId);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    // Use the database function for consistent user banning
+    const { error } = await supabase.rpc('ban_user', {
+      _user_id: userId,
+      _admin_id: user.id,
+      _reason: reason,
+      _duration_hours: durationHours
+    });
 
     if (error) throw error;
 
@@ -242,14 +298,28 @@ export async function banUser(userId: string): Promise<boolean> {
   }
 }
 
-export async function unbanUser(userId: string): Promise<boolean> {
+export async function unbanUser(userId: string, reason: string = 'Admin unban'): Promise<boolean> {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    // Unban user
     const { error } = await supabase
       .from('user_profiles')
       .update({ is_banned: false })
       .eq('id', userId);
 
     if (error) throw error;
+
+    // Log the moderation action
+    await supabase
+      .from('moderation_actions')
+      .insert({
+        admin_id: user.id,
+        target_user_id: userId,
+        action_type: 'unban',
+        reason
+      });
 
     toast({
       title: 'Success',

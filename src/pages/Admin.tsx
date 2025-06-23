@@ -7,6 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AdminDashboard from '@/components/admin/AdminDashboard';
 import AdminPostsTab from '@/components/admin/AdminPostsTab';
 import AdminUsersTab from '@/components/admin/AdminUsersTab';
+import AdminReportsTab from '@/components/admin/AdminReportsTab';
+import AdminModerationTab from '@/components/admin/AdminModerationTab';
 
 const Admin = () => {
   const { user } = useAuth();
@@ -30,7 +32,7 @@ const Admin = () => {
         </h1>
         
         <Tabs defaultValue="dashboard" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-aura-charcoal border border-white/10">
+          <TabsList className="grid w-full grid-cols-5 bg-aura-charcoal border border-white/10">
             <TabsTrigger value="dashboard" className="data-[state=active]:bg-aura-blue">
               Dashboard
             </TabsTrigger>
@@ -39,6 +41,12 @@ const Admin = () => {
             </TabsTrigger>
             <TabsTrigger value="users" className="data-[state=active]:bg-aura-blue">
               Users
+            </TabsTrigger>
+            <TabsTrigger value="reports" className="data-[state=active]:bg-aura-blue">
+              Reports
+            </TabsTrigger>
+            <TabsTrigger value="moderation" className="data-[state=active]:bg-aura-blue">
+              Actions
             </TabsTrigger>
           </TabsList>
           
@@ -52,6 +60,14 @@ const Admin = () => {
           
           <TabsContent value="users" className="mt-6">
             <AdminUsersTab />
+          </TabsContent>
+          
+          <TabsContent value="reports" className="mt-6">
+            <AdminReportsTab />
+          </TabsContent>
+          
+          <TabsContent value="moderation" className="mt-6">
+            <AdminModerationTab />
           </TabsContent>
         </Tabs>
       </div>

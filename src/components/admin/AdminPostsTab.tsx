@@ -1,11 +1,12 @@
 
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchAllPosts, deletePost } from '@/api/adminApi';
+import { fetchAllPosts, deletePost, restorePost } from '@/api/adminApi';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Trash2, Eye, MessageCircle, Heart } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Trash2, Eye, MessageCircle, Heart, RotateCcw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from '@/components/ui/use-toast';
 
@@ -20,11 +21,19 @@ const AdminPostsTab = () => {
 
   const handleDeletePost = async (postId: string) => {
     if (window.confirm('Are you sure you want to delete this post?')) {
-      const success = await deletePost(postId);
+      const success = await deletePost(postId, 'Admin deletion via admin panel');
       if (success) {
         queryClient.invalidateQueries({ queryKey: ['admin-posts'] });
         queryClient.invalidateQueries({ queryKey: ['posts'] });
       }
+    }
+  };
+
+  const handleRestorePost = async (postId: string) => {
+    const success = await restorePost(postId, 'Admin restoration via admin panel');
+    if (success) {
+      queryClient.invalidateQueries({ queryKey: ['admin-posts'] });
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
     }
   };
 
@@ -47,7 +56,7 @@ const AdminPostsTab = () => {
 
       <div className="space-y-4">
         {data?.posts.map((post) => (
-          <Card key={post.id} className="bg-aura-charcoal border-white/10">
+          <Card key={post.id} className={`bg-aura-charcoal border-white/10 ${post.is_deleted ? 'opacity-60' : ''}`}>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
@@ -63,14 +72,30 @@ const AdminPostsTab = () => {
                       @{post.author.username} • {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
                     </p>
                   </div>
+                  {post.is_deleted && (
+                    <Badge variant="destructive">Deleted</Badge>
+                  )}
                 </div>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => handleDeletePost(post.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <div className="flex space-x-2">
+                  {post.is_deleted ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleRestorePost(post.id)}
+                      className="text-green-400 border-green-400 hover:bg-green-400/10"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeletePost(post.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </CardHeader>
             <CardContent>

@@ -91,7 +91,10 @@ export type Database = {
         Row: {
           content: string
           created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
           id: string
+          is_deleted: boolean | null
           parent_comment_id: string | null
           post_id: string
           updated_at: string
@@ -100,7 +103,10 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           id?: string
+          is_deleted?: boolean | null
           parent_comment_id?: string | null
           post_id: string
           updated_at?: string
@@ -109,7 +115,10 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           id?: string
+          is_deleted?: boolean | null
           parent_comment_id?: string | null
           post_id?: string
           updated_at?: string
@@ -125,6 +134,54 @@ export type Database = {
           },
           {
             foreignKeyName: "comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_flags: {
+        Row: {
+          auto_action_taken: string | null
+          comment_id: string | null
+          confidence_score: number | null
+          created_at: string
+          flag_type: string
+          id: string
+          post_id: string | null
+          reviewed: boolean | null
+        }
+        Insert: {
+          auto_action_taken?: string | null
+          comment_id?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          flag_type: string
+          id?: string
+          post_id?: string | null
+          reviewed?: boolean | null
+        }
+        Update: {
+          auto_action_taken?: string | null
+          comment_id?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          flag_type?: string
+          id?: string
+          post_id?: string | null
+          reviewed?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_flags_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_flags_post_id_fkey"
             columns: ["post_id"]
             isOneToOne: false
             referencedRelation: "posts"
@@ -279,6 +336,57 @@ export type Database = {
           },
         ]
       }
+      moderation_actions: {
+        Row: {
+          action_type: string
+          admin_id: string | null
+          created_at: string
+          duration_hours: number | null
+          id: string
+          reason: string
+          target_comment_id: string | null
+          target_post_id: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          admin_id?: string | null
+          created_at?: string
+          duration_hours?: number | null
+          id?: string
+          reason: string
+          target_comment_id?: string | null
+          target_post_id?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          admin_id?: string | null
+          created_at?: string
+          duration_hours?: number | null
+          id?: string
+          reason?: string
+          target_comment_id?: string | null
+          target_post_id?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moderation_actions_target_comment_id_fkey"
+            columns: ["target_comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderation_actions_target_post_id_fkey"
+            columns: ["target_post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           content: string
@@ -357,8 +465,11 @@ export type Database = {
           comments_count: number | null
           content: string
           created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
           id: string
           image_url: string | null
+          is_deleted: boolean | null
           likes_count: number | null
           updated_at: string
           user_id: string
@@ -368,8 +479,11 @@ export type Database = {
           comments_count?: number | null
           content: string
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           id?: string
           image_url?: string | null
+          is_deleted?: boolean | null
           likes_count?: number | null
           updated_at?: string
           user_id: string
@@ -379,14 +493,80 @@ export type Database = {
           comments_count?: number | null
           content?: string
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           id?: string
           image_url?: string | null
+          is_deleted?: boolean | null
           likes_count?: number | null
           updated_at?: string
           user_id?: string
           video_url?: string | null
         }
         Relationships: []
+      }
+      reports: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          id: string
+          reason: string
+          report_type: string
+          reported_comment_id: string | null
+          reported_post_id: string | null
+          reported_user_id: string | null
+          reporter_id: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          reason: string
+          report_type: string
+          reported_comment_id?: string | null
+          reported_post_id?: string | null
+          reported_user_id?: string | null
+          reporter_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          reason?: string
+          report_type?: string
+          reported_comment_id?: string | null
+          reported_post_id?: string | null
+          reported_user_id?: string | null
+          reporter_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_reported_comment_id_fkey"
+            columns: ["reported_comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_reported_post_id_fkey"
+            columns: ["reported_post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stripe_accounts: {
         Row: {
@@ -560,6 +740,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      ban_user: {
+        Args: {
+          _user_id: string
+          _admin_id: string
+          _reason: string
+          _duration_hours?: number
+        }
+        Returns: undefined
+      }
       create_notification: {
         Args: {
           recipient_id: string
@@ -570,6 +759,15 @@ export type Database = {
           related_user?: string
         }
         Returns: string
+      }
+      delete_content: {
+        Args: {
+          _admin_id: string
+          _reason: string
+          _post_id?: string
+          _comment_id?: string
+        }
+        Returns: undefined
       }
       get_user_conversations: {
         Args: { user_uuid: string }
