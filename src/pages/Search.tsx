@@ -9,13 +9,14 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, User, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
+import { TrendingUp, User, FileText, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { globalSearch, getTrendingSearches, SearchResult } from '@/api/searchApi';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
 import { useRealTimeUpdates } from '@/hooks/useRealTimeUpdates';
 import LazyImage from '@/components/optimization/LazyImage';
 import SkipLink from '@/components/accessibility/SkipLink';
+import { useOfflineDetection } from '@/hooks/useOfflineDetection';
 
 const RESULTS_PER_PAGE = 10;
 
@@ -32,6 +33,7 @@ const Search = () => {
     hasMedia: false,
   });
 
+  const { isOnline } = useOfflineDetection();
   useRealTimeUpdates();
 
   const { data: searchResults, isLoading: searchLoading, refetch } = useQuery({
@@ -45,12 +47,13 @@ const Search = () => {
         total: results.length === RESULTS_PER_PAGE ? offset + RESULTS_PER_PAGE + 1 : offset + results.length
       }));
     },
-    enabled: searchQuery.length > 2,
+    enabled: searchQuery.length > 2 && isOnline,
   });
 
   const { data: trendingSearches, isLoading: trendingLoading } = useQuery({
     queryKey: ['trending-searches'],
-    queryFn: () => getTrendingSearches(10),
+    queryFn: () => getTrendingSearches(15),
+    enabled: isOnline,
   });
 
   useEffect(() => {
@@ -87,12 +90,6 @@ const Search = () => {
     if (!searchResults?.results) return [];
     
     let results = [...searchResults.results];
-    
-    // Apply media filters
-    if (filters.mediaType !== 'all' && filters.contentType === 'posts') {
-      // This would need backend support for proper filtering
-      // For now, we'll just show all results
-    }
     
     // Apply date filters
     if (filters.dateRange !== 'all') {
@@ -135,18 +132,18 @@ const Search = () => {
 
   const totalPages = Math.ceil((searchResults?.total || 0) / RESULTS_PER_PAGE);
 
-  const renderSearchResult = (result: SearchResult) => {
-    const highlightText = (text: string) => {
-      if (!searchQuery) return text;
-      const regex = new RegExp(`(${searchQuery})`, 'gi');
-      return text.replace(regex, '<mark class="bg-yellow-200 text-black">$1</mark>');
-    };
+  const highlightText = (text: string) => {
+    if (!searchQuery || !text) return text;
+    const regex = new RegExp(`(${searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    return text.replace(regex, '<mark class="bg-yellow-200/80 text-gray-900 rounded px-1">$1</mark>');
+  };
 
+  const renderSearchResult = (result: SearchResult) => {
     return (
-      <Card key={`${result.result_type}-${result.result_id}`} className="mb-4 hover:shadow-lg transition-shadow bg-gray-900/50 border-white/10">
+      <Card key={`${result.result_type}-${result.result_id}`} className="mb-4 hover:shadow-lg transition-all duration-200 bg-gray-900/50 border-white/10 hover:border-white/20">
         <CardContent className="p-6">
           <div className="flex items-start space-x-4">
-            <Avatar className="h-12 w-12">
+            <Avatar className="h-12 w-12 flex-shrink-0">
               {result.avatar_url ? (
                 <LazyImage 
                   src={result.avatar_url} 
@@ -164,10 +161,10 @@ const Search = () => {
               )}
             </Avatar>
             
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <div className="flex items-center space-x-2 mb-2">
                 <Badge variant={result.result_type === 'post' ? 'default' : 'secondary'} 
-                       className={result.result_type === 'post' ? 'bg-aura-purple' : ''}>
+                       className={result.result_type === 'post' ? 'bg-aura-purple hover:bg-aura-purple/80' : ''}>
                   {result.result_type === 'post' ? 'Post' : 'User'}
                 </Badge>
                 {result.username && (
@@ -180,11 +177,11 @@ const Search = () => {
                 )}
               </div>
               
-              <h3 className="font-semibold text-lg mb-2 text-white" 
+              <h3 className="font-semibold text-lg mb-2 text-white truncate" 
                   dangerouslySetInnerHTML={{ __html: highlightText(result.title) }} />
               
               {result.content && (
-                <p className="text-gray-300 line-clamp-3" 
+                <p className="text-gray-300 line-clamp-3 text-sm leading-relaxed" 
                    dangerouslySetInnerHTML={{ __html: highlightText(result.content) }} />
               )}
             </div>
@@ -217,12 +214,18 @@ const Search = () => {
                 onValueChange={(value) => handleFiltersChange({ ...filters, contentType: value as any })}
                 className="mt-4"
               >
-                <TabsList className="grid w-full grid-cols-3 max-w-md bg-gray-800">
-                  <TabsTrigger value="all" className="data-[state=active]:bg-aura-purple">All</TabsTrigger>
-                  <TabsTrigger value="posts" className="data-[state=active]:bg-aura-purple">Posts</TabsTrigger>
-                  <TabsTrigger value="users" className="data-[state=active]:bg-aura-purple">Users</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-3 max-w-md bg-gray-800 border border-white/10">
+                  <TabsTrigger value="all" className="data-[state=active]:bg-aura-purple data-[state=active]:text-white">All</TabsTrigger>
+                  <TabsTrigger value="posts" className="data-[state=active]:bg-aura-purple data-[state=active]:text-white">Posts</TabsTrigger>
+                  <TabsTrigger value="users" className="data-[state=active]:bg-aura-purple data-[state=active]:text-white">Users</TabsTrigger>
                 </TabsList>
               </Tabs>
+
+              {!isOnline && (
+                <div className="mt-4 p-3 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
+                  <p className="text-yellow-200 text-sm">You're currently offline. Search results may be limited.</p>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -239,6 +242,7 @@ const Search = () => {
                 {searchQuery.length < 3 ? (
                   <Card className="bg-gray-900/50 border-white/10">
                     <CardContent className="p-8 text-center">
+                      <Search className="h-12 w-12 mx-auto mb-4 text-gray-400" />
                       <h3 className="text-lg font-semibold mb-2 text-white">Start Searching</h3>
                       <p className="text-gray-400">Enter at least 3 characters to search for users and posts.</p>
                     </CardContent>
@@ -249,7 +253,7 @@ const Search = () => {
                       <Card key={i} className="bg-gray-900/50 border-white/10">
                         <CardContent className="p-6">
                           <div className="flex items-start space-x-4">
-                            <Skeleton className="h-12 w-12 rounded-full" />
+                            <Skeleton className="h-12 w-12 rounded-full flex-shrink-0" />
                             <div className="flex-1 space-y-2">
                               <div className="flex items-center space-x-2">
                                 <Skeleton className="h-5 w-16" />
@@ -277,19 +281,19 @@ const Search = () => {
                             size="sm"
                             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                             disabled={currentPage === 1}
-                            className="border-white/20"
+                            className="border-white/20 hover:bg-white/10"
                           >
                             <ChevronLeft className="h-4 w-4" />
                           </Button>
-                          <span className="text-sm text-gray-400">
-                            Page {currentPage} of {totalPages}
+                          <span className="text-sm text-gray-400 px-2">
+                            {currentPage} / {totalPages}
                           </span>
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                             disabled={currentPage === totalPages}
-                            className="border-white/20"
+                            className="border-white/20 hover:bg-white/10"
                           >
                             <ChevronRight className="h-4 w-4" />
                           </Button>
@@ -303,6 +307,7 @@ const Search = () => {
                 ) : (
                   <Card className="bg-gray-900/50 border-white/10">
                     <CardContent className="p-8 text-center">
+                      <Search className="h-12 w-12 mx-auto mb-4 text-gray-400" />
                       <h3 className="text-lg font-semibold mb-2 text-white">No Results Found</h3>
                       <p className="text-gray-400">
                         No {filters.contentType === 'all' ? 'content' : filters.contentType} found for "{searchQuery}". 
@@ -313,19 +318,19 @@ const Search = () => {
                 )}
               </div>
 
-              {/* Trending Searches Sidebar */}
+              {/* Enhanced Trending Searches Sidebar */}
               <div className="lg:col-span-1">
                 <Card className="bg-gray-900/50 border-white/10">
                   <CardHeader>
-                    <CardTitle className="flex items-center text-white">
-                      <TrendingUp className="h-5 w-5 mr-2" />
-                      Trending Searches
+                    <CardTitle className="flex items-center text-white text-lg">
+                      <TrendingUp className="h-5 w-5 mr-2 text-aura-purple" />
+                      Trending Now
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     {trendingLoading ? (
                       <div className="space-y-3">
-                        {Array.from({ length: 8 }).map((_, i) => (
+                        {Array.from({ length: 10 }).map((_, i) => (
                           <div key={i} className="flex items-center justify-between">
                             <Skeleton className="h-4 w-24" />
                             <Skeleton className="h-4 w-8" />
@@ -333,11 +338,11 @@ const Search = () => {
                         ))}
                       </div>
                     ) : trendingSearches && trendingSearches.length > 0 ? (
-                      <div className="space-y-3">
+                      <div className="space-y-2">
                         {trendingSearches.map((trend, index) => (
                           <div 
                             key={trend.search_term}
-                            className="flex items-center justify-between cursor-pointer hover:bg-white/5 p-2 rounded transition-colors"
+                            className="flex items-center justify-between cursor-pointer hover:bg-white/5 p-3 rounded-lg transition-all duration-200 group"
                             onClick={() => handleTrendingClick(trend.search_term)}
                             role="button"
                             tabIndex={0}
@@ -348,21 +353,38 @@ const Search = () => {
                               }
                             }}
                           >
-                            <div className="flex items-center space-x-2">
-                              <span className="text-sm font-medium text-gray-500">
-                                {index + 1}.
+                            <div className="flex items-center space-x-3 flex-1 min-w-0">
+                              <span className="text-sm font-medium text-aura-purple flex-shrink-0 w-6">
+                                #{index + 1}
                               </span>
-                              <span className="text-sm text-gray-300">{trend.search_term}</span>
+                              <span className="text-sm text-gray-300 group-hover:text-white transition-colors truncate">
+                                {trend.search_term}
+                              </span>
                             </div>
-                            <Badge variant="outline" className="text-xs border-white/20 text-gray-400">
+                            <Badge variant="outline" className="text-xs border-white/20 text-gray-400 bg-white/5 ml-2 flex-shrink-0">
                               {trend.search_count}
                             </Badge>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-gray-400">No trending searches yet.</p>
+                      <div className="text-center py-8">
+                        <TrendingUp className="h-8 w-8 mx-auto mb-2 text-gray-500" />
+                        <p className="text-sm text-gray-400">No trending searches yet.</p>
+                      </div>
                     )}
+                  </CardContent>
+                </Card>
+
+                {/* Quick Search Tips */}
+                <Card className="bg-gray-900/50 border-white/10 mt-4">
+                  <CardHeader>
+                    <CardTitle className="text-white text-sm">Search Tips</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <p className="text-xs text-gray-400">• Use quotes for exact phrases</p>
+                    <p className="text-xs text-gray-400">• Add filters to narrow results</p>
+                    <p className="text-xs text-gray-400">• Try different keywords</p>
                   </CardContent>
                 </Card>
               </div>
