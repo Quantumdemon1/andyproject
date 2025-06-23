@@ -32,7 +32,7 @@ const Index = () => {
         <ContentTabs activeTab={activeTab} setActiveTab={setActiveTab} />
         <SubscriptionNotice />
         <LoadPostsButton onClick={handleRefreshFeed} />
-        <PostsFeed />
+        <PostsFeed filter={activeTab} />
       </div>
     </MainLayout>
   );

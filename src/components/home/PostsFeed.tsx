@@ -6,13 +6,17 @@ import Post from '@/components/Post';
 import { Skeleton } from '@/components/ui/skeleton';
 import PostsPagination from './PostsPagination';
 
-const PostsFeed = () => {
+interface PostsFeedProps {
+  filter?: string;
+}
+
+const PostsFeed: React.FC<PostsFeedProps> = ({ filter = 'all' }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['posts', currentPage],
-    queryFn: () => fetchPosts(currentPage),
+    queryKey: ['posts', currentPage, filter],
+    queryFn: () => fetchPosts(currentPage, 10, filter),
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes (formerly cacheTime)
   });
@@ -22,19 +26,24 @@ const PostsFeed = () => {
     // Prefetch next and previous pages for better UX
     if (data && page < data.totalPages) {
       queryClient.prefetchQuery({
-        queryKey: ['posts', page + 1],
-        queryFn: () => fetchPosts(page + 1),
+        queryKey: ['posts', page + 1, filter],
+        queryFn: () => fetchPosts(page + 1, 10, filter),
         staleTime: 2 * 60 * 1000,
       });
     }
     if (page > 1) {
       queryClient.prefetchQuery({
-        queryKey: ['posts', page - 1],
-        queryFn: () => fetchPosts(page - 1),
+        queryKey: ['posts', page - 1, filter],
+        queryFn: () => fetchPosts(page - 1, 10, filter),
         staleTime: 2 * 60 * 1000,
       });
     }
   };
+
+  // Reset to page 1 when filter changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [filter]);
 
   if (isLoading) {
     return (
@@ -69,9 +78,16 @@ const PostsFeed = () => {
   }
 
   if (!data || data.posts.length === 0) {
+    const emptyMessages = {
+      all: "No posts found. Be the first to create a post!",
+      following: "No posts from users you follow. Try following some users!",
+      media: "No media posts found. Share some photos or videos!",
+      recent: "No recent posts found. Check back later!"
+    };
+
     return (
       <div className="text-center py-8">
-        <p className="text-gray-400">No posts found. Be the first to create a post!</p>
+        <p className="text-gray-400">{emptyMessages[filter as keyof typeof emptyMessages] || emptyMessages.all}</p>
       </div>
     );
   }

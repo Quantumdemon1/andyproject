@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ContentTabsProps {
   activeTab: string;
@@ -9,24 +9,36 @@ interface ContentTabsProps {
 
 const ContentTabs: React.FC<ContentTabsProps> = ({ activeTab, setActiveTab }) => {
   return (
-    <Tabs defaultValue={activeTab} className="mb-8">
-      <TabsList className="bg-transparent border-b border-white/10 w-full justify-start p-0 h-auto">
-        <TabsTrigger 
-          value="all" 
-          onClick={() => setActiveTab("all")} 
-          className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-aura-blue data-[state=active]:rounded-none px-6 py-2 text-gray-400"
-        >
-          All
-        </TabsTrigger>
-        <TabsTrigger 
-          value="purchased" 
-          onClick={() => setActiveTab("purchased")} 
-          className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-aura-blue data-[state=active]:rounded-none px-6 py-2 text-gray-400"
-        >
-          Purchased
-        </TabsTrigger>
-      </TabsList>
-    </Tabs>
+    <div className="mb-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-4 bg-aura-charcoal border border-white/10">
+          <TabsTrigger 
+            value="all" 
+            className="data-[state=active]:bg-aura-blue data-[state=active]:text-white"
+          >
+            All Posts
+          </TabsTrigger>
+          <TabsTrigger 
+            value="following" 
+            className="data-[state=active]:bg-aura-blue data-[state=active]:text-white"
+          >
+            Following
+          </TabsTrigger>
+          <TabsTrigger 
+            value="media" 
+            className="data-[state=active]:bg-aura-blue data-[state=active]:text-white"
+          >
+            Media
+          </TabsTrigger>
+          <TabsTrigger 
+            value="recent" 
+            className="data-[state=active]:bg-aura-blue data-[state=active]:text-white"
+          >
+            Recent
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+    </div>
   );
 };
 

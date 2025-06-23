@@ -28,21 +28,67 @@ export interface PostsResponse {
 
 const POSTS_PER_PAGE = 10;
 
-export async function fetchPosts(page: number = 1, limit: number = POSTS_PER_PAGE): Promise<PostsResponse> {
+export async function fetchPosts(
+  page: number = 1, 
+  limit: number = POSTS_PER_PAGE,
+  filter: string = 'all'
+): Promise<PostsResponse> {
   try {
     const offset = (page - 1) * limit;
+    const { data: { user } } = await supabase.auth.getUser();
+
+    // Build the query based on filter
+    let query = supabase.from('posts').select('*');
+    
+    // Apply filters
+    switch (filter) {
+      case 'following':
+        if (user) {
+          // Get posts from users that the current user follows
+          const { data: followingData } = await supabase
+            .from('followers')
+            .select('following_id')
+            .eq('follower_id', user.id);
+          
+          const followingIds = followingData?.map(f => f.following_id) || [];
+          if (followingIds.length > 0) {
+            query = query.in('user_id', followingIds);
+          } else {
+            // If not following anyone, return empty result
+            return {
+              posts: [],
+              totalCount: 0,
+              totalPages: 0,
+              currentPage: page,
+              hasMore: false,
+            };
+          }
+        }
+        break;
+      case 'media':
+        // Only posts with images or videos
+        query = query.or('image_url.not.is.null,video_url.not.is.null');
+        break;
+      case 'recent':
+        // Posts from the last 24 hours
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        query = query.gte('created_at', yesterday.toISOString());
+        break;
+      case 'all':
+      default:
+        // No additional filter for 'all'
+        break;
+    }
 
     // Get total count first for pagination
-    const { count: totalCount, error: countError } = await supabase
-      .from('posts')
+    const { count: totalCount, error: countError } = await query
       .select('*', { count: 'exact', head: true });
 
     if (countError) throw countError;
 
     // Get posts with pagination
-    const { data: postsData, error: postsError } = await supabase
-      .from('posts')
-      .select('*')
+    const { data: postsData, error: postsError } = await query
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
