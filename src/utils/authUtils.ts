@@ -40,7 +40,14 @@ export const fetchUserRole = async (userId: string): Promise<'admin' | 'user' | 
       return null;
     }
 
-    return data?.role || 'user';
+    // Validate that the role is one of the expected values
+    const role = data?.role;
+    if (role === 'admin' || role === 'user') {
+      return role;
+    }
+    
+    // Default to 'user' if role is invalid or null
+    return 'user';
   } catch (error) {
     console.error('Error fetching user role:', error);
     return null;
