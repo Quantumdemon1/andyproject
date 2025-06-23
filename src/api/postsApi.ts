@@ -97,7 +97,7 @@ export async function fetchPosts(
         break;
       case 'media':
         console.log('Applying media filter');
-        // Only posts with images or videos - fix the syntax error
+        // Only posts with images or videos
         query = query.or('image_url.not.is.null,video_url.not.is.null');
         break;
       case 'recent':
@@ -114,9 +114,52 @@ export async function fetchPosts(
         break;
     }
 
-    // Get total count first for pagination
-    const { count: totalCount, error: countError } = await query
-      .select('*', { count: 'exact', head: true });
+    // Get total count first for pagination - use separate query for count
+    let countQuery = supabase.from('posts').select('id', { count: 'exact' });
+    
+    // Apply the same filters to count query
+    switch (filter) {
+      case 'following':
+        if (user) {
+          const { data: followingData } = await supabase
+            .from('followers')
+            .select('following_id')
+            .eq('follower_id', user.id);
+          
+          const followingIds = followingData?.map(f => f.following_id) || [];
+          
+          if (followingIds.length > 0) {
+            countQuery = countQuery.in('user_id', followingIds);
+          } else {
+            return {
+              posts: [],
+              totalCount: 0,
+              totalPages: 0,
+              currentPage: page,
+              hasMore: false,
+            };
+          }
+        } else {
+          return {
+            posts: [],
+            totalCount: 0,
+            totalPages: 0,
+            currentPage: page,
+            hasMore: false,
+          };
+        }
+        break;
+      case 'media':
+        countQuery = countQuery.or('image_url.not.is.null,video_url.not.is.null');
+        break;
+      case 'recent':
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        countQuery = countQuery.gte('created_at', yesterday.toISOString());
+        break;
+    }
+
+    const { count: totalCount, error: countError } = await countQuery;
 
     if (countError) {
       console.error('Error getting post count:', countError);
