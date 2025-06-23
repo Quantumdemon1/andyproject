@@ -152,9 +152,16 @@ export async function getPostCount(userId: string): Promise<number> {
 
 export async function followUser(followingId: string): Promise<boolean> {
   try {
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
     const { error } = await supabase
       .from('followers')
       .insert({
+        follower_id: user.id,
         following_id: followingId
       });
 
@@ -179,9 +186,16 @@ export async function followUser(followingId: string): Promise<boolean> {
 
 export async function unfollowUser(followingId: string): Promise<boolean> {
   try {
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
     const { error } = await supabase
       .from('followers')
       .delete()
+      .eq('follower_id', user.id)
       .eq('following_id', followingId);
 
     if (error) throw error;

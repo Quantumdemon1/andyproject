@@ -25,7 +25,7 @@ export async function fetchPosts(): Promise<Post[]> {
       .from('posts')
       .select(`
         *,
-        user_profiles:user_id (
+        user_profiles!posts_user_id_fkey (
           username,
           avatar_url,
           display_name
@@ -58,16 +58,23 @@ export async function fetchPosts(): Promise<Post[]> {
 
 export async function createPost(content: string, imageUrl?: string, videoUrl?: string): Promise<Post | null> {
   try {
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
     const { data, error } = await supabase
       .from('posts')
       .insert({
         content,
         image_url: imageUrl,
-        video_url: videoUrl
+        video_url: videoUrl,
+        user_id: user.id
       })
       .select(`
         *,
-        user_profiles:user_id (
+        user_profiles!posts_user_id_fkey (
           username,
           avatar_url,
           display_name

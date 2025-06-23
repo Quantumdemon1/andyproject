@@ -1,6 +1,17 @@
 
 import { User } from "@supabase/supabase-js";
 
+// Add missing types for AuthContext
+export interface AuthResult<T> {
+  data: T | null;
+  error: Error | null;
+}
+
+export interface SignUpResult {
+  user: User | null;
+  session: any | null;
+}
+
 /**
  * Determines user role based on email address
  */

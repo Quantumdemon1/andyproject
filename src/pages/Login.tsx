@@ -1,7 +1,7 @@
 
-import { LoginForm } from "@/components/auth/LoginForm";
-import { SignupForm } from "@/components/auth/SignupForm";
-import { TestLoginButtons } from "@/components/auth/TestLoginButtons";
+import LoginForm from "@/components/auth/LoginForm";
+import SignupForm from "@/components/auth/SignupForm";
+import TestLoginButtons from "@/components/auth/TestLoginButtons";
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 

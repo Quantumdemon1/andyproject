@@ -12,29 +12,24 @@ export async function fetchConversations(userId: string): Promise<Conversation[]
 
     if (error) throw error;
 
-    // Transform the data to match our Conversation type
+    // Transform the data to match our Conversation type with correct property names
     const conversations: Conversation[] = data.map((row: any) => ({
       id: row.conversation_id,
       name: row.conversation_name,
-      isGroup: row.is_group,
-      createdAt: row.conversation_created_at,
-      updatedAt: row.conversation_updated_at,
+      is_group: row.is_group,
+      created_at: row.conversation_created_at,
+      updated_at: row.conversation_updated_at,
       participants: [{
         id: userId,
+        user_id: userId,
         username: 'You',
-        avatarUrl: '',
-        isOnline: true
+        avatar_url: '',
+        is_online: true
       }],
-      otherParticipant: row.other_participant_username ? {
-        id: 'other-user',
-        username: row.other_participant_username,
-        avatarUrl: row.other_participant_avatar_url,
-        isOnline: row.other_participant_is_online
-      } : undefined,
       lastMessage: row.last_message_content ? {
         content: row.last_message_content,
         created_at: row.last_message_created_at,
-        status: row.last_message_status as 'sent' | 'delivered' | 'read'
+        status: row.last_message_status
       } : undefined,
       isPinned: false // This will be set by the pinned conversations logic
     }));

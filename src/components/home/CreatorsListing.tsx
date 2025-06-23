@@ -1,7 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { fetchCreators } from "@/api/userProfilesApi";
-import { CreatorCard } from "@/components/CreatorCard";
+import CreatorCard from "@/components/CreatorCard";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const CreatorsListing = () => {
@@ -47,15 +47,12 @@ const CreatorsListing = () => {
       {creators.map((creator) => (
         <CreatorCard
           key={creator.id}
-          id={creator.id}
           name={creator.display_name || creator.username || 'Unknown'}
           username={creator.username || ''}
-          avatar={creator.avatar_url || ''}
-          cover={creator.cover_url || ''}
-          bio={creator.bio || ''}
+          description={creator.bio || 'No description available'}
+          imageUrl={creator.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + creator.id}
           followers={creator.follower_count || 0}
-          posts={creator.post_count || 0}
-          tags={creator.tags ? creator.tags.split(',').map(tag => tag.trim()) : []}
+          category={creator.tags ? creator.tags.split(',')[0]?.trim() : undefined}
         />
       ))}
     </div>
