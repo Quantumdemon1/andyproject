@@ -176,6 +176,9 @@ const EnhancedPostComposer: React.FC<EnhancedPostComposerProps> = ({ onPostCreat
           <EnhancedFileUpload 
             onFilesUploaded={handleFilesUploaded}
             maxFiles={5}
+            bucket="post-media"
+            acceptedTypes={['image/*', 'video/*']}
+            maxSizePerFile={50 * 1024 * 1024} // 50MB for posts
           />
 
           {/* Advanced Options */}

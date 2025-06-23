@@ -36,6 +36,7 @@ interface EnhancedFileUploadProps {
   acceptedTypes?: string[];
   maxSizePerFile?: number; // in bytes
   className?: string;
+  bucket?: string;
 }
 
 const EnhancedFileUpload: React.FC<EnhancedFileUploadProps> = ({
@@ -43,7 +44,8 @@ const EnhancedFileUpload: React.FC<EnhancedFileUploadProps> = ({
   maxFiles = 10,
   acceptedTypes = ['image/*', 'video/*', 'audio/*', 'application/pdf', 'text/plain'],
   maxSizePerFile = 100 * 1024 * 1024, // 100MB
-  className = ''
+  className = '',
+  bucket = 'user-uploads'
 }) => {
   const { user } = useAuth();
   const [files, setFiles] = useState<FileUploadItem[]>([]);
@@ -146,19 +148,26 @@ const EnhancedFileUpload: React.FC<EnhancedFileUploadProps> = ({
     const fileExt = file.name.split('.').pop();
     const fileName = `${user?.id}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
 
+    console.log('Uploading file to bucket:', bucket, 'with path:', fileName);
+
     const { data, error } = await supabase.storage
-      .from('user-content')
+      .from(bucket)
       .upload(fileName, file, {
         cacheControl: '3600',
         upsert: false
       });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Upload error:', error);
+      throw error;
+    }
 
     const { data: publicUrlData } = supabase.storage
-      .from('user-content')
+      .from(bucket)
       .getPublicUrl(data.path);
 
+    console.log('Upload successful, public URL:', publicUrlData.publicUrl);
+    
     return publicUrlData.publicUrl;
   };
 

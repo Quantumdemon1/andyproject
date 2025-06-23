@@ -1,3 +1,4 @@
+
 import { useState, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -95,17 +96,26 @@ const PostComposer: React.FC<PostComposerProps> = ({ onPostCreated }) => {
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}/${Date.now()}.${fileExt}`;
       
+      console.log('Uploading to post-media bucket with path:', fileName);
+      
       // Upload to Supabase Storage
       const { data, error } = await supabase.storage
         .from('post-media')
         .upload(fileName, file);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Upload error:', error);
+        throw error;
+      }
+      
+      console.log('Upload successful:', data);
       
       // Get public URL
       const { data: publicUrlData } = supabase.storage
         .from('post-media')
         .getPublicUrl(data.path);
+      
+      console.log('Public URL:', publicUrlData.publicUrl);
       
       return publicUrlData.publicUrl;
     } finally {

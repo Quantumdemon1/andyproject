@@ -20,7 +20,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
   children, 
   accept = "image/*,video/*,.pdf,.doc,.docx",
   maxSize = 100 * 1024 * 1024, // 100MB default
-  bucket = 'user-content'
+  bucket = 'user-uploads'
 }) => {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -92,6 +92,8 @@ const FileUpload: React.FC<FileUploadProps> = ({
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
       
+      console.log('Uploading file to bucket:', bucket, 'with path:', fileName);
+      
       // Upload to Supabase Storage
       const { data, error } = await supabase.storage
         .from(bucket)
@@ -100,12 +102,19 @@ const FileUpload: React.FC<FileUploadProps> = ({
           upsert: false
         });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Upload error:', error);
+        throw error;
+      }
+      
+      console.log('Upload successful:', data);
       
       // Get public URL
       const { data: publicUrlData } = supabase.storage
         .from(bucket)
         .getPublicUrl(data.path);
+      
+      console.log('Public URL:', publicUrlData.publicUrl);
       
       setUploadProgress(100);
       
