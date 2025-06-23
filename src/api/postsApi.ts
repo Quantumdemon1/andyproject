@@ -21,28 +21,51 @@ export interface Post {
 
 export async function fetchPosts(): Promise<Post[]> {
   try {
-    const { data, error } = await supabase
+    // First get posts
+    const { data: postsData, error: postsError } = await supabase
       .from('posts')
-      .select(`
-        *,
-        user_profiles (
-          username,
-          avatar_url,
-          display_name
-        )
-      `)
+      .select('*')
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (postsError) throw postsError;
 
-    const posts: Post[] = data.map((post: any) => ({
-      ...post,
-      author: post.user_profiles ? {
-        username: post.user_profiles.username,
-        avatar_url: post.user_profiles.avatar_url,
-        display_name: post.user_profiles.display_name
-      } : undefined
-    }));
+    if (!postsData || postsData.length === 0) {
+      return [];
+    }
+
+    // Get unique user IDs
+    const userIds = [...new Set(postsData.map(post => post.user_id))];
+
+    // Get user profiles for these user IDs
+    const { data: profilesData, error: profilesError } = await supabase
+      .from('user_profiles')
+      .select('id, username, avatar_url, display_name')
+      .in('id', userIds);
+
+    if (profilesError) {
+      console.error('Error fetching user profiles:', profilesError);
+    }
+
+    // Create a map of user profiles by ID
+    const profilesMap = new Map();
+    if (profilesData) {
+      profilesData.forEach(profile => {
+        profilesMap.set(profile.id, profile);
+      });
+    }
+
+    // Combine posts with author information
+    const posts: Post[] = postsData.map((post: any) => {
+      const profile = profilesMap.get(post.user_id);
+      return {
+        ...post,
+        author: profile ? {
+          username: profile.username,
+          avatar_url: profile.avatar_url,
+          display_name: profile.display_name
+        } : undefined
+      };
+    });
 
     return posts;
   } catch (error) {
@@ -64,7 +87,7 @@ export async function createPost(content: string, imageUrl?: string, videoUrl?: 
       throw new Error('User not authenticated');
     }
 
-    const { data, error } = await supabase
+    const { data: postData, error } = await supabase
       .from('posts')
       .insert({
         content,
@@ -72,24 +95,24 @@ export async function createPost(content: string, imageUrl?: string, videoUrl?: 
         video_url: videoUrl,
         user_id: user.id
       })
-      .select(`
-        *,
-        user_profiles (
-          username,
-          avatar_url,
-          display_name
-        )
-      `)
+      .select()
       .single();
 
     if (error) throw error;
 
+    // Get user profile for the created post
+    const { data: profileData } = await supabase
+      .from('user_profiles')
+      .select('username, avatar_url, display_name')
+      .eq('id', user.id)
+      .single();
+
     const post: Post = {
-      ...data,
-      author: data.user_profiles ? {
-        username: data.user_profiles.username,
-        avatar_url: data.user_profiles.avatar_url,
-        display_name: data.user_profiles.display_name
+      ...postData,
+      author: profileData ? {
+        username: profileData.username,
+        avatar_url: profileData.avatar_url,
+        display_name: profileData.display_name
       } : undefined
     };
 
