@@ -91,8 +91,15 @@ export async function fetchReports(page: number = 1, limit: number = 20): Promis
 
     if (reportsError) throw reportsError;
 
+    // Cast the data to match our interface types
+    const reports: Report[] = (reportsData || []).map(report => ({
+      ...report,
+      report_type: report.report_type as Report['report_type'],
+      status: report.status as Report['status']
+    }));
+
     return {
-      reports: reportsData || [],
+      reports,
       totalCount: totalCount || 0,
       totalPages: Math.ceil((totalCount || 0) / limit)
     };
@@ -170,8 +177,14 @@ export async function fetchModerationActions(page: number = 1, limit: number = 2
 
     if (actionsError) throw actionsError;
 
+    // Cast the data to match our interface types
+    const actions: ModerationAction[] = (actionsData || []).map(action => ({
+      ...action,
+      action_type: action.action_type as ModerationAction['action_type']
+    }));
+
     return {
-      actions: actionsData || [],
+      actions,
       totalCount: totalCount || 0,
       totalPages: Math.ceil((totalCount || 0) / limit)
     };
