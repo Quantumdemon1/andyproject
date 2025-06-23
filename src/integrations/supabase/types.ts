@@ -418,6 +418,45 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_tiers: {
+        Row: {
+          benefits: string[] | null
+          created_at: string
+          creator_id: string
+          description: string | null
+          display_order: number
+          id: string
+          is_active: boolean
+          name: string
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          benefits?: string[] | null
+          created_at?: string
+          creator_id: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          price: number
+          updated_at?: string
+        }
+        Update: {
+          benefits?: string[] | null
+          created_at?: string
+          creator_id?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           created_at: string
@@ -429,6 +468,7 @@ export type Database = {
           status: string
           stripe_subscription_id: string | null
           subscriber_id: string
+          tier_id: string | null
           updated_at: string
         }
         Insert: {
@@ -441,6 +481,7 @@ export type Database = {
           status?: string
           stripe_subscription_id?: string | null
           subscriber_id: string
+          tier_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -453,9 +494,18 @@ export type Database = {
           status?: string
           stripe_subscription_id?: string | null
           subscriber_id?: string
+          tier_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_profiles: {
         Row: {

@@ -9,6 +9,8 @@ import { Loader2 } from "lucide-react";
 interface SubscribeButtonProps {
   creatorId: string;
   price: number;
+  tierId?: string;
+  tierName?: string;
   variant?: "default" | "outline" | "secondary" | "ghost" | "link" | "destructive" | "subscribe";
   size?: "default" | "sm" | "lg" | "icon";
   className?: string;
@@ -17,6 +19,8 @@ interface SubscribeButtonProps {
 const SubscribeButton = ({ 
   creatorId, 
   price, 
+  tierId,
+  tierName,
   variant = "subscribe", 
   size = "default",
   className 
@@ -46,13 +50,15 @@ const SubscribeButton = ({
 
     try {
       setLoading(true);
-      console.log("Creating checkout session for subscription to creator:", creatorId);
+      console.log("Creating checkout session for subscription:", { creatorId, tierId, tierName });
       
       const { data, error } = await supabase.functions.invoke("create-checkout", {
         body: {
           type: "subscription",
           creatorId,
-          price
+          price,
+          tierId,
+          tierName
         }
       });
 
@@ -79,6 +85,10 @@ const SubscribeButton = ({
     }
   };
 
+  const buttonText = tierName 
+    ? `Subscribe to ${tierName} - $${price}/month`
+    : `Subscribe $${price}/month`;
+
   return (
     <Button
       variant={variant}
@@ -93,7 +103,7 @@ const SubscribeButton = ({
           Processing...
         </>
       ) : (
-        <>Subscribe ${price}/month</>
+        buttonText
       )}
     </Button>
   );

@@ -6,7 +6,8 @@ import { Info } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import SubscribeButton from "@/components/stripe/SubscribeButton";
+import SubscriptionTiers from "@/components/stripe/SubscriptionTiers";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 interface Subscription {
   id: string;
@@ -14,6 +15,7 @@ interface Subscription {
   end_date: string;
   status: string;
   creator_name?: string;
+  tier_name?: string;
 }
 
 const SubscriptionNotice = () => {
@@ -28,14 +30,15 @@ const SubscriptionNotice = () => {
       if (!user) return;
       
       try {
-        // Get expired subscriptions
+        // Get expired subscriptions with tier information
         const { data: subscriptions, error } = await supabase
           .from("subscriptions")
           .select(`
             id, 
             creator_id,
             end_date,
-            status
+            status,
+            subscription_tiers!inner(name)
           `)
           .eq("subscriber_id", user.id)
           .eq("status", "expired")
@@ -56,7 +59,8 @@ const SubscriptionNotice = () => {
             
           setExpiredSubscription({
             ...subscription,
-            creator_name: creatorProfile?.username || "Creator"
+            creator_name: creatorProfile?.username || "Creator",
+            tier_name: (subscription as any).subscription_tiers?.name
           });
         }
       } catch (error) {
@@ -75,7 +79,8 @@ const SubscriptionNotice = () => {
     creator_id: "demo-creator-1",
     end_date: "2025-02-23",
     status: "expired",
-    creator_name: "Marcus Lee"
+    creator_name: "Marcus Lee",
+    tier_name: "Premium"
   };
   
   const subscription = expiredSubscription || demoExpiredSubscription;
@@ -99,18 +104,30 @@ const SubscriptionNotice = () => {
         <p className={cn(
           isMobile ? "text-xs" : "text-sm"
         )}>
-          Your subscription to <span className="font-semibold">{subscription.creator_name}</span> has expired on {formattedDate}
+          Your {subscription.tier_name} subscription to <span className="font-semibold">{subscription.creator_name}</span> expired on {formattedDate}
         </p>
       </div>
       <div className="flex space-x-2">
         {!isMobile && (
-          <SubscribeButton 
-            creatorId={subscription.creator_id} 
-            price={9.99} 
-            variant="outline" 
-            size="sm" 
-            className="h-8 px-2 text-xs bg-aura-blue text-white hover:bg-aura-blue/90 border-none" 
-          />
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-8 px-2 text-xs bg-aura-blue text-white hover:bg-aura-blue/90 border-none"
+              >
+                Renew
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-aura-charcoal border-white/10 max-w-4xl">
+              <DialogHeader>
+                <DialogTitle className="text-white">
+                  Subscribe to {subscription.creator_name}
+                </DialogTitle>
+              </DialogHeader>
+              <SubscriptionTiers creatorId={subscription.creator_id} />
+            </DialogContent>
+          </Dialog>
         )}
         <Button 
           variant="link" 
