@@ -66,7 +66,7 @@ export async function fetchPosts(
         }
         break;
       case 'media':
-        // Only posts with images or videos - use correct .or() syntax
+        // Only posts with images or videos - use proper syntax for non-null checks
         query = query.or('image_url.not.is.null,video_url.not.is.null');
         break;
       case 'recent':
