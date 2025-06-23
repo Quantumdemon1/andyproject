@@ -30,7 +30,6 @@ export async function fetchMessages(conversationId: string, userId: string) {
     // Add isMe flag to messages and ensure proper type casting
     const formattedMessages: Message[] = data.map(message => ({
       ...message,
-      // Ensure status is one of the allowed values
       status: (message.status as 'sent' | 'delivered' | 'read') || 'sent',
       isMe: message.sender_id === userId
     }));
@@ -102,8 +101,7 @@ export async function deleteMessage(messageId: string, userId: string) {
 
 export async function addMessageReaction(messageId: string, userId: string, emoji: string) {
   try {
-    // Use type assertion to bypass TypeScript errors since the table exists
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('message_reactions')
       .insert({
         message_id: messageId,
@@ -125,8 +123,7 @@ export async function addMessageReaction(messageId: string, userId: string, emoj
 
 export async function removeMessageReaction(messageId: string, userId: string, emoji: string) {
   try {
-    // Use type assertion to bypass TypeScript errors since the table exists
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('message_reactions')
       .delete()
       .eq('message_id', messageId)
@@ -147,8 +144,7 @@ export async function removeMessageReaction(messageId: string, userId: string, e
 
 export async function fetchMessageReactions(messageId: string) {
   try {
-    // Use type assertion to bypass TypeScript errors since the table exists
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('message_reactions')
       .select('*')
       .eq('message_id', messageId);
@@ -157,6 +153,22 @@ export async function fetchMessageReactions(messageId: string) {
     return data || [];
   } catch (error) {
     console.error('Error fetching reactions:', error);
+    return [];
+  }
+}
+
+export async function fetchThreadMessages(threadId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('messages')
+      .select('*')
+      .eq('thread_id', threadId)
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching thread messages:', error);
     return [];
   }
 }

@@ -1,75 +1,68 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useDebounce } from '@/hooks/use-debounce';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface TypingUser {
-  userId: string;
+  user_id: string;
   username: string;
-  avatar?: string;
+  avatar_url?: string;
 }
 
-export const useTypingIndicator = (conversationId: string, currentUserId: string) => {
-  const [isTyping, setIsTyping] = useState(false);
+export const useTypingIndicator = (conversationId: string) => {
+  const { user } = useAuth();
   const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
-  const debouncedIsTyping = useDebounce(isTyping, 1000);
+  const [isTyping, setIsTyping] = useState(false);
 
-  const channel = supabase.channel(`typing:${conversationId}`);
+  const startTyping = useCallback(async () => {
+    if (!user || !conversationId) return;
+
+    setIsTyping(true);
+    
+    const channel = supabase.channel(`conversation-${conversationId}-typing`);
+    await channel.track({
+      user_id: user.id,
+      username: user.user_metadata?.username || 'Unknown',
+      avatar_url: user.user_metadata?.avatar_url,
+      typing: true
+    });
+  }, [user, conversationId]);
+
+  const stopTyping = useCallback(async () => {
+    if (!user || !conversationId) return;
+
+    setIsTyping(false);
+    
+    const channel = supabase.channel(`conversation-${conversationId}-typing`);
+    await channel.untrack();
+  }, [user, conversationId]);
 
   useEffect(() => {
-    channel
+    if (!conversationId) return;
+
+    const channel = supabase
+      .channel(`conversation-${conversationId}-typing`)
       .on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState();
-        const users: TypingUser[] = [];
-        
-        Object.keys(state).forEach(key => {
-          const presences = state[key];
-          presences.forEach((presence: any) => {
-            if (presence.userId !== currentUserId && presence.isTyping) {
-              users.push({
-                userId: presence.userId,
-                username: presence.username,
-                avatar: presence.avatar
-              });
-            }
-          });
-        });
-        
-        setTypingUsers(users);
+        const typing = Object.values(state).flat()
+          .filter((presence: any) => presence.typing && presence.user_id !== user?.id)
+          .map((presence: any) => ({
+            user_id: presence.user_id,
+            username: presence.username,
+            avatar_url: presence.avatar_url
+          }));
+        setTypingUsers(typing);
       })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversationId, currentUserId]);
-
-  useEffect(() => {
-    if (debouncedIsTyping !== isTyping) {
-      setIsTyping(false);
-    }
-  }, [debouncedIsTyping]);
-
-  const startTyping = useCallback((username: string, avatar?: string) => {
-    setIsTyping(true);
-    channel.track({
-      userId: currentUserId,
-      username,
-      avatar,
-      isTyping: true
-    });
-  }, [currentUserId, channel]);
-
-  const stopTyping = useCallback(() => {
-    setIsTyping(false);
-    channel.track({
-      userId: currentUserId,
-      isTyping: false
-    });
-  }, [currentUserId, channel]);
+  }, [conversationId, user?.id]);
 
   return {
     typingUsers,
+    isTyping,
     startTyping,
     stopTyping
   };
