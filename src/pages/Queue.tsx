@@ -75,7 +75,7 @@ const Queue = () => {
                 <Badge variant={item.status === "scheduled" ? "notification" : "default"}>
                   {item.status === "scheduled" ? "Scheduled" : "Draft"}
                 </Badge>
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" className="text-slate-950">
                   <ArrowUpDown size={16} />
                 </Button>
               </div>
