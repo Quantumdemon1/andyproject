@@ -15,7 +15,7 @@ interface SearchFiltersProps {
 }
 
 export interface SearchFilterState {
-  contentType: 'all' | 'posts' | 'users' | 'media';
+  contentType: 'all' | 'posts' | 'users';
   mediaType: 'all' | 'image' | 'video';
   dateRange: 'all' | 'today' | 'week' | 'month' | 'custom';
   customStartDate?: Date;
@@ -102,45 +102,42 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ filters, onFiltersChange,
               <SelectItem value="all">All Content</SelectItem>
               <SelectItem value="posts">Posts</SelectItem>
               <SelectItem value="users">Users</SelectItem>
-              <SelectItem value="media">Media</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
-        {/* Media Type */}
-        {filters.contentType === 'media' && (
-          <div>
-            <label className="text-sm font-medium mb-2 block">Media Type</label>
-            <div className="flex space-x-2">
-              <Button
-                variant={filters.mediaType === 'all' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => updateFilter('mediaType', 'all')}
-              >
-                All
-              </Button>
-              <Button
-                variant={filters.mediaType === 'image' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => updateFilter('mediaType', 'image')}
-              >
-                <Image className="h-4 w-4 mr-1" />
-                Images
-              </Button>
-              <Button
-                variant={filters.mediaType === 'video' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => updateFilter('mediaType', 'video')}
-              >
-                <Video className="h-4 w-4 mr-1" />
-                Videos
-              </Button>
-            </div>
-          </div>
-        )}
-
         {isExpanded && (
           <>
+            {/* Media Type Filter - only show when content type allows media */}
+            <div>
+              <label className="text-sm font-medium mb-2 block">Media Type</label>
+              <div className="flex space-x-2">
+                <Button
+                  variant={filters.mediaType === 'all' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => updateFilter('mediaType', 'all')}
+                >
+                  All
+                </Button>
+                <Button
+                  variant={filters.mediaType === 'image' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => updateFilter('mediaType', 'image')}
+                >
+                  <Image className="h-4 w-4 mr-1" />
+                  Images
+                </Button>
+                <Button
+                  variant={filters.mediaType === 'video' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => updateFilter('mediaType', 'video')}
+                >
+                  <Video className="h-4 w-4 mr-1" />
+                  Videos
+                </Button>
+              </div>
+            </div>
+
             {/* Date Range */}
             <div>
               <label className="text-sm font-medium mb-2 block">Date Range</label>
