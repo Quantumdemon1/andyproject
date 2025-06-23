@@ -18,14 +18,26 @@ export interface TrendingSearch {
   search_count: number;
 }
 
+export interface ExtendedSearchFilters {
+  contentType?: 'all' | 'posts' | 'users';
+  mediaType?: 'all' | 'image' | 'video';
+  dateRange?: 'all' | 'today' | 'week' | 'month' | 'custom';
+  customStartDate?: Date;
+  customEndDate?: Date;
+  tags?: string[];
+  verified?: boolean;
+  hasMedia?: boolean;
+}
+
 export async function globalSearch(
   query: string, 
   type: 'all' | 'posts' | 'users' = 'all',
   limit: number = 20,
-  offset: number = 0
+  offset: number = 0,
+  filters?: ExtendedSearchFilters
 ): Promise<SearchResult[]> {
   try {
-    console.log('Performing global search:', { query, type, limit, offset });
+    console.log('Performing global search:', { query, type, limit, offset, filters });
     
     const { data, error } = await supabase.rpc('global_search', {
       search_query: query,
@@ -41,8 +53,7 @@ export async function globalSearch(
       await trackSearch(query);
     }
 
-    // Type assertion to ensure proper typing
-    return (data || []).map((item: any): SearchResult => ({
+    let results = (data || []).map((item: any): SearchResult => ({
       result_type: item.result_type as 'post' | 'user',
       result_id: item.result_id,
       title: item.title || '',
@@ -52,6 +63,13 @@ export async function globalSearch(
       created_at: item.created_at,
       rank: item.rank || 0
     }));
+
+    // Apply client-side filters if provided
+    if (filters) {
+      results = applyClientFilters(results, filters);
+    }
+
+    return results;
   } catch (error) {
     console.error('Error performing global search:', error);
     toast({
@@ -61,6 +79,64 @@ export async function globalSearch(
     });
     return [];
   }
+}
+
+function applyClientFilters(results: SearchResult[], filters: ExtendedSearchFilters): SearchResult[] {
+  let filteredResults = [...results];
+
+  // Apply date range filters
+  if (filters.dateRange && filters.dateRange !== 'all') {
+    const now = new Date();
+    let filterDate = new Date();
+
+    switch (filters.dateRange) {
+      case 'today':
+        filterDate.setHours(0, 0, 0, 0);
+        break;
+      case 'week':
+        filterDate.setDate(now.getDate() - 7);
+        break;
+      case 'month':
+        filterDate.setMonth(now.getMonth() - 1);
+        break;
+      case 'custom':
+        if (filters.customStartDate) {
+          filteredResults = filteredResults.filter(r => 
+            r.created_at && new Date(r.created_at) >= filters.customStartDate!
+          );
+        }
+        if (filters.customEndDate) {
+          filteredResults = filteredResults.filter(r => 
+            r.created_at && new Date(r.created_at) <= filters.customEndDate!
+          );
+        }
+        return filteredResults;
+    }
+
+    if (filters.dateRange !== 'custom') {
+      filteredResults = filteredResults.filter(r => 
+        r.created_at && new Date(r.created_at) >= filterDate
+      );
+    }
+  }
+
+  // Apply tag filters
+  if (filters.tags && filters.tags.length > 0) {
+    filteredResults = filteredResults.filter(result => {
+      const contentLower = (result.content || '').toLowerCase();
+      const titleLower = (result.title || '').toLowerCase();
+      
+      return filters.tags!.some(tag => 
+        contentLower.includes(tag.toLowerCase()) || 
+        titleLower.includes(tag.toLowerCase())
+      );
+    });
+  }
+
+  // Media type filtering would require backend support for proper implementation
+  // For now, we'll just return the filtered results
+  
+  return filteredResults;
 }
 
 export async function trackSearch(searchTerm: string): Promise<void> {
@@ -84,6 +160,24 @@ export async function getTrendingSearches(limit: number = 10): Promise<TrendingS
     return data || [];
   } catch (error) {
     console.error('Error fetching trending searches:', error);
+    return [];
+  }
+}
+
+export async function getSearchSuggestions(query: string): Promise<string[]> {
+  try {
+    if (query.length < 2) return [];
+
+    // Get suggestions from trending searches
+    const trending = await getTrendingSearches(20);
+    const suggestions = trending
+      .filter(trend => trend.search_term.toLowerCase().includes(query.toLowerCase()))
+      .map(trend => trend.search_term)
+      .slice(0, 5);
+
+    return suggestions;
+  } catch (error) {
+    console.error('Error fetching search suggestions:', error);
     return [];
   }
 }
