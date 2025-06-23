@@ -19,6 +19,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import BankAccountForm from "@/components/stripe/BankAccountForm";
 import BankAccountsList from "@/components/stripe/BankAccountsList";
 import StripeConnect from "@/components/stripe/StripeConnect";
+import TierManagement from "@/components/stripe/TierManagement";
 
 interface AnalyticItem {
   label: string;
@@ -303,64 +304,70 @@ const CreatorDashboard = () => {
           </TabsContent>
           
           <TabsContent value="subscriptions">
-            <Card>
-              <CardHeader>
-                <CardTitle>Subscription Settings</CardTitle>
-                <CardDescription>
-                  Manage your subscription plans and pricing
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="subscription-price">Monthly Subscription Price ($)</Label>
-                    <div className="flex space-x-2">
-                      <div className="relative flex-1">
-                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                        <Input 
-                          id="subscription-price" 
-                          value={subscriptionPrice}
-                          onChange={handlePriceChange}
-                          className="pl-8"
-                        />
-                      </div>
-                      <Button onClick={saveSubscriptionPrice}>Save</Button>
-                    </div>
-                    <p className="text-sm text-gray-400 mt-1">
-                      Platform fee: 20%. You'll receive ${(Number(subscriptionPrice) * 0.8).toFixed(2)} per subscription.
-                    </p>
-                  </div>
-                  
-                  <Separator />
-                  
-                  <div>
-                    <h3 className="text-lg font-medium mb-2">Subscription Benefits</h3>
-                    <p className="text-sm text-gray-400 mb-4">
-                      Let subscribers know what they'll get when they subscribe to your content
-                    </p>
-                    
+            <div className="space-y-6">
+              {/* Legacy subscription settings - now secondary */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Legacy Subscription Settings</CardTitle>
+                  <CardDescription>
+                    Legacy single-tier subscription (consider migrating to tier system below)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
                     <div className="space-y-2">
-                      <div className="flex items-center p-3 border border-gray-200 dark:border-gray-800 rounded-md">
-                        <div className="flex-1">Exclusive content</div>
-                        <Button variant="ghost" size="sm">Edit</Button>
+                      <Label htmlFor="subscription-price">Monthly Subscription Price ($)</Label>
+                      <div className="flex space-x-2">
+                        <div className="relative flex-1">
+                          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                          <Input 
+                            id="subscription-price" 
+                            value={subscriptionPrice}
+                            onChange={handlePriceChange}
+                            className="pl-8"
+                          />
+                        </div>
+                        <Button onClick={saveSubscriptionPrice}>Save</Button>
                       </div>
-                      <div className="flex items-center p-3 border border-gray-200 dark:border-gray-800 rounded-md">
-                        <div className="flex-1">Direct messaging</div>
-                        <Button variant="ghost" size="sm">Edit</Button>
+                      <p className="text-sm text-gray-400 mt-1">
+                        Platform fee: 20%. You'll receive ${(Number(subscriptionPrice) * 0.8).toFixed(2)} per subscription.
+                      </p>
+                    </div>
+                    
+                    <Separator />
+                    
+                    <div>
+                      <h3 className="text-lg font-medium mb-2">Subscription Benefits</h3>
+                      <p className="text-sm text-gray-400 mb-4">
+                        Let subscribers know what they'll get when they subscribe to your content
+                      </p>
+                      
+                      <div className="space-y-2">
+                        <div className="flex items-center p-3 border border-gray-200 dark:border-gray-800 rounded-md">
+                          <div className="flex-1">Exclusive content</div>
+                          <Button variant="ghost" size="sm">Edit</Button>
+                        </div>
+                        <div className="flex items-center p-3 border border-gray-200 dark:border-gray-800 rounded-md">
+                          <div className="flex-1">Direct messaging</div>
+                          <Button variant="ghost" size="sm">Edit</Button>
+                        </div>
+                        <div className="flex items-center p-3 border border-gray-200 dark:border-gray-800 rounded-md">
+                          <div className="flex-1">Early access to new releases</div>
+                          <Button variant="ghost" size="sm">Edit</Button>
+                        </div>
+                        <Button variant="outline" className="w-full">
+                          <PlusCircle size={16} className="mr-2" />
+                          Add Benefit
+                        </Button>
                       </div>
-                      <div className="flex items-center p-3 border border-gray-200 dark:border-gray-800 rounded-md">
-                        <div className="flex-1">Early access to new releases</div>
-                        <Button variant="ghost" size="sm">Edit</Button>
-                      </div>
-                      <Button variant="outline" className="w-full">
-                        <PlusCircle size={16} className="mr-2" />
-                        Add Benefit
-                      </Button>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+
+              {/* New Tier Management System */}
+              <TierManagement />
+            </div>
           </TabsContent>
           
           <TabsContent value="analytics">
