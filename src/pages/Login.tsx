@@ -18,16 +18,6 @@ const Login = () => {
   const handleLogin = async (data: { email: string; password: string }) => {
     setIsSubmitting(true);
     try {
-      // Clean up any existing auth state
-      cleanupAuthState();
-      
-      // Attempt global sign out first
-      try {
-        await supabase.auth.signOut({ scope: 'global' });
-      } catch (err) {
-        // Continue even if this fails
-      }
-
       const { error } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
@@ -40,8 +30,8 @@ const Login = () => {
         description: "Logged in successfully",
       });
 
-      // Force page reload for clean state
-      window.location.href = "/home";
+      // Navigate to home page
+      navigate("/");
     } catch (error: any) {
       toast({
         title: "Error",
@@ -56,9 +46,6 @@ const Login = () => {
   const handleSignup = async (data: { email: string; password: string; username: string }) => {
     setIsSubmitting(true);
     try {
-      // Clean up any existing auth state
-      cleanupAuthState();
-
       const { error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -66,7 +53,7 @@ const Login = () => {
           data: {
             username: data.username,
           },
-          emailRedirectTo: window.location.origin + '/home'
+          emailRedirectTo: window.location.origin + '/'
         }
       });
 
@@ -91,31 +78,13 @@ const Login = () => {
     setIsSubmitting(true);
     
     try {
-      // Clean up existing state
-      cleanupAuthState();
-      
-      // Attempt global sign out
-      try {
-        await supabase.auth.signOut({ scope: 'global' });
-      } catch (err) {
-        // Continue even if this fails
-      }
+      const credentials = role === 'admin' 
+        ? { email: 'admin@example.com', password: 'password123' }
+        : { email: 'user@example.com', password: 'password123' };
 
-      if (role === 'admin') {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: 'admin@example.com',
-          password: 'password123',
-        });
+      const { error } = await supabase.auth.signInWithPassword(credentials);
 
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: 'user@example.com',
-          password: 'password123',
-        });
-
-        if (error) throw error;
-      }
+      if (error) throw error;
 
       toast({
         title: "Login successful",
@@ -123,8 +92,8 @@ const Login = () => {
         variant: "default"
       });
 
-      // Force page reload for clean state
-      window.location.href = '/home';
+      // Navigate to home page
+      navigate("/");
     } catch (error: any) {
       toast({
         title: "Login failed",

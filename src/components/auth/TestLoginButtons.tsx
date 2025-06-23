@@ -15,6 +15,8 @@ const TestLoginButtons: React.FC<TestLoginButtonsProps> = ({
   const { toast } = useToast();
   
   const handleTestLogin = async (role: 'admin' | 'user') => {
+    if (testAccountLoading) return; // Prevent multiple clicks
+    
     try {
       setTestAccountLoading(role);
       await onTestLogin(role);
