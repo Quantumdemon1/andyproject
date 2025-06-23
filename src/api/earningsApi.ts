@@ -32,10 +32,10 @@ export async function fetchCreatorEarnings(creatorId: string): Promise<EarningsD
 
     if (subsError) throw subsError;
 
-    // Get purchase revenue
+    // Get purchase revenue - now including id field
     const { data: purchases, error: purchasesError } = await supabase
       .from('art_purchases')
-      .select('amount, created_at, artwork_name, status')
+      .select('id, amount, created_at, artwork_name, status')
       .eq('seller_id', creatorId)
       .eq('status', 'paid');
 
@@ -72,7 +72,7 @@ export async function fetchCreatorEarnings(creatorId: string): Promise<EarningsD
         status: sub.status
       })) || [],
       ...purchases?.slice(0, 5).map(purchase => ({
-        id: purchase.id || `purchase_${purchase.created_at}`,
+        id: purchase.id,
         type: 'purchase' as const,
         amount: Number(purchase.amount),
         currency: 'USD',
