@@ -1,5 +1,6 @@
 
 import { User } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
 
 // Add missing types for AuthContext
 export interface AuthResult<T> {
@@ -24,12 +25,35 @@ export const isDirectAccessEnabled = (): boolean => {
 };
 
 /**
- * Determines user role based on email address
+ * Fetch user role from the database
+ */
+export const fetchUserRole = async (userId: string): Promise<'admin' | 'user' | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('role')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      console.error('Error fetching user role:', error);
+      return null;
+    }
+
+    return data?.role || 'user';
+  } catch (error) {
+    console.error('Error fetching user role:', error);
+    return null;
+  }
+};
+
+/**
+ * Determines user role based on email address (fallback method)
  */
 export const determineUserRole = (email?: string): 'admin' | 'user' | null => {
   if (!email) return null;
   
-  // Check if user is admin based on email
+  // Check if user is admin based on email (fallback only)
   const adminEmails = ['admin@example.com']; // Update with actual admin emails
   return adminEmails.includes(email) ? 'admin' : 'user';
 };
@@ -41,6 +65,8 @@ export const hasRequiredRole = (user: User | null, requiredRole?: 'admin' | 'use
   if (!requiredRole) return true;
   if (!user) return false;
   
+  // For now, use email-based determination as fallback
+  // In a real app, you'd want to fetch from database or store role in session
   const userRole = determineUserRole(user.email);
   
   if (requiredRole === 'admin') {

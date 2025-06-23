@@ -4,7 +4,7 @@ import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { useAuthState } from "@/hooks/useAuthState";
-import { determineUserRole, AuthResult, SignUpResult, cleanupAuthState } from "@/utils/authUtils";
+import { determineUserRole, AuthResult, SignUpResult, cleanupAuthState, fetchUserRole } from "@/utils/authUtils";
 
 interface AuthContextType {
   session: Session | null;
@@ -15,6 +15,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, username?: string) => Promise<AuthResult<SignUpResult>>;
   signOut: () => Promise<void>;
   updateUserPresence: (isOnline: boolean) => Promise<void>;
+  refreshUserRole: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,7 +24,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children 
 }) => {
   // Use the refactored auth state hook
-  const { session, user, loading, userRole, updateUserPresence } = useAuthState();
+  const { session, user, loading, userRole, updateUserPresence, setUserRole } = useAuthState();
+
+  // Function to refresh user role from database
+  const refreshUserRole = async () => {
+    if (user?.id) {
+      const role = await fetchUserRole(user.id);
+      if (role && setUserRole) {
+        setUserRole(role);
+      }
+    }
+  };
 
   // Sign in functionality
   const signIn = async (email: string, password: string): Promise<AuthResult<Session>> => {
@@ -57,10 +68,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       
       console.log("Sign in successful:", data.user?.email);
       
-      toast({
-        title: "Welcome back!",
-        description: `You've successfully signed in as ${determineUserRole(data.user?.email)}`,
-      });
+      // Fetch the actual role from database
+      if (data.user?.id) {
+        const dbRole = await fetchUserRole(data.user.id);
+        toast({
+          title: "Welcome back!",
+          description: `You've successfully signed in as ${dbRole || 'user'}`,
+        });
+      }
       
       return { error: null, data: data.session };
     } catch (error) {
@@ -169,6 +184,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         signUp,
         signOut,
         updateUserPresence,
+        refreshUserRole,
       }}
     >
       {children}

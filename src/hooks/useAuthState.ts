@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { determineUserRole } from "@/utils/authUtils";
+import { fetchUserRole } from "@/utils/authUtils";
 
 /**
  * Hook to manage authentication state
@@ -34,6 +34,12 @@ export const useAuthState = () => {
     }
   }, [user]);
 
+  // Function to fetch user role from database
+  const fetchAndSetUserRole = useCallback(async (userId: string) => {
+    const role = await fetchUserRole(userId);
+    setUserRole(role);
+  }, []);
+
   useEffect(() => {
     console.log("Setting up auth state listener");
     
@@ -43,13 +49,15 @@ export const useAuthState = () => {
         console.log("Auth state changed:", event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
-        setUserRole(determineUserRole(session?.user?.email));
         
-        // Update user presence when auth state changes
-        if (session?.user) {
+        // Fetch role from database when user signs in
+        if (session?.user?.id) {
           setTimeout(() => {
+            fetchAndSetUserRole(session.user.id);
             updateUserPresence(true);
           }, 0);
+        } else {
+          setUserRole(null);
         }
         
         setLoading(false);
@@ -61,9 +69,9 @@ export const useAuthState = () => {
       console.log("Initial session check:", session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
-      setUserRole(determineUserRole(session?.user?.email));
       
-      if (session?.user) {
+      if (session?.user?.id) {
+        fetchAndSetUserRole(session.user.id);
         updateUserPresence(true);
       }
       
@@ -74,7 +82,7 @@ export const useAuthState = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [updateUserPresence]);
+  }, [fetchAndSetUserRole, updateUserPresence]);
 
   // Set up visibility change handlers
   useEffect(() => {
@@ -106,5 +114,6 @@ export const useAuthState = () => {
     loading,
     userRole,
     updateUserPresence,
+    setUserRole,
   };
 };
