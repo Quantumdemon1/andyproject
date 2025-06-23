@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Index from '@/pages/Index';
@@ -17,7 +18,7 @@ import NotFound from '@/pages/NotFound';
 import PrivateRoute from '@/components/PrivateRoute';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { QueryProvider } from '@/contexts/QueryContext';
-import { ErrorBoundary } from 'react-error-boundary';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import PaymentSuccess from '@/pages/PaymentSuccess';
 import SubscriptionSuccess from '@/pages/SubscriptionSuccess';
 import Search from '@/pages/Search';

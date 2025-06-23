@@ -41,7 +41,17 @@ export async function globalSearch(
       await trackSearch(query);
     }
 
-    return data || [];
+    // Type assertion to ensure proper typing
+    return (data || []).map((item: any): SearchResult => ({
+      result_type: item.result_type as 'post' | 'user',
+      result_id: item.result_id,
+      title: item.title || '',
+      content: item.content || '',
+      avatar_url: item.avatar_url,
+      username: item.username,
+      created_at: item.created_at,
+      rank: item.rank || 0
+    }));
   } catch (error) {
     console.error('Error performing global search:', error);
     toast({

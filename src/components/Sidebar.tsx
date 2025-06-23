@@ -1,9 +1,9 @@
+
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Home, Bell, MessageSquare, BookMarked, FolderArchive, Calendar, UserCircle, MoreHorizontal, PlusCircle, Menu, X, Search, Compass, MessageCircle, Clock, Shield, Bookmark } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface SidebarProps {
@@ -76,11 +76,6 @@ const Sidebar: React.FC<SidebarProps> = ({ activePath }) => {
             >
               <item.icon size={20} />
               <span>{item.label}</span>
-              {item.badge && (
-                <Badge variant="notification" className="ml-auto">
-                  {item.badge}
-                </Badge>
-              )}
             </Link>
           ))}
         </nav>

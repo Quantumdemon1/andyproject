@@ -1,20 +1,13 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import {
-  Home,
-  Compass,
-  MessageCircle,
-  Bell,
-  Clock,
-  Shield,
-  Bookmark,
-  MoreHorizontal,
-  LogOut,
   Search,
   User,
+  LogOut,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -22,22 +15,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Skeleton } from "@/components/ui/skeleton"
-import Sidebar from './Sidebar';
 import SearchCommand from '@/components/search/SearchCommand';
 
 const Header = () => {
-  const { user, logout } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
-
   const handleLogout = async () => {
-    await logout();
+    await signOut();
     navigate('/login');
   };
 
@@ -81,7 +67,7 @@ const Header = () => {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-8 w-8 p-0 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.avatar_url || undefined} alt={user?.email || "User Avatar"} />
+                    <AvatarImage src={user?.user_metadata?.avatar_url || undefined} alt={user?.email || "User Avatar"} />
                     <AvatarFallback>{user?.email ? user.email[0].toUpperCase() : "U"}</AvatarFallback>
                   </Avatar>
                 </Button>
