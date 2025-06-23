@@ -10,7 +10,6 @@ import MessageList from '@/components/conversation/MessageList';
 import EnhancedMessageComposer from '@/components/conversation/EnhancedMessageComposer';
 import TypingIndicator from '@/components/conversation/TypingIndicator';
 import { useTypingIndicator } from '@/hooks/useTypingIndicator';
-import { useMessageReactions } from '@/hooks/useMessageReactions';
 
 interface ConversationProps {
   currentChat: any;
@@ -50,7 +49,7 @@ const Conversation: React.FC<ConversationProps> = ({
     setReplyToMessage({
       id: message.id,
       content: message.content || '',
-      username: message.username || 'Unknown User'
+      username: message.username || message.sender_id || 'Unknown User'
     });
   };
 

@@ -58,14 +58,14 @@ const EnhancedMessageItem: React.FC<EnhancedMessageItemProps> = ({
       <Avatar className="h-8 w-8 flex-shrink-0">
         <AvatarImage src={message.avatar_url || undefined} />
         <AvatarFallback>
-          {message.username?.charAt(0).toUpperCase() || 'U'}
+          {(message.username || message.sender_id)?.charAt(0).toUpperCase() || 'U'}
         </AvatarFallback>
       </Avatar>
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center space-x-2 mb-1">
           <span className="text-sm font-medium text-white">
-            {message.username || 'Unknown User'}
+            {message.username || message.sender_id || 'Unknown User'}
           </span>
           <span className="text-xs text-gray-400">
             {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}

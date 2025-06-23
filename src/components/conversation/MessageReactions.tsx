@@ -7,61 +7,83 @@ import { MessageReaction } from '@/types/messaging';
 import { useAuth } from '@/contexts/AuthContext';
 import EmojiPicker from '@/components/EmojiPicker';
 
+interface ReactionSummary {
+  emoji: string;
+  count: number;
+  hasReacted: boolean;
+}
+
 interface MessageReactionsProps {
-  messageId: string;
+  messageId?: string;
+  reactions?: ReactionSummary[];
+  onRemoveReaction?: (emoji: string) => void;
   className?: string;
 }
 
-const MessageReactions: React.FC<MessageReactionsProps> = ({ messageId, className }) => {
+const MessageReactions: React.FC<MessageReactionsProps> = ({ 
+  messageId, 
+  reactions: propReactions,
+  onRemoveReaction,
+  className 
+}) => {
   const { user } = useAuth();
   const [reactions, setReactions] = useState<MessageReaction[]>([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   useEffect(() => {
-    loadReactions();
+    if (messageId) {
+      loadReactions();
+    }
   }, [messageId]);
 
   const loadReactions = async () => {
+    if (!messageId) return;
     const messageReactions = await fetchMessageReactions(messageId);
-    // Type assertion to ensure proper typing
     setReactions(messageReactions as MessageReaction[]);
   };
 
-  // Group reactions by emoji
-  const groupedReactions = reactions.reduce((acc, reaction) => {
+  // Use prop reactions if provided, otherwise compute from loaded reactions
+  const displayReactions = propReactions || reactions.reduce((acc, reaction) => {
     if (!acc[reaction.emoji]) {
       acc[reaction.emoji] = {
         emoji: reaction.emoji,
         count: 0,
-        hasUserReacted: false,
-        users: []
+        hasReacted: false,
       };
     }
     acc[reaction.emoji].count++;
-    acc[reaction.emoji].users.push(reaction.user_id);
     if (reaction.user_id === user?.id) {
-      acc[reaction.emoji].hasUserReacted = true;
+      acc[reaction.emoji].hasReacted = true;
     }
     return acc;
-  }, {} as Record<string, { emoji: string; count: number; hasUserReacted: boolean; users: string[] }>);
+  }, {} as Record<string, ReactionSummary>);
+
+  const reactionArray = Array.isArray(displayReactions) 
+    ? displayReactions 
+    : Object.values(displayReactions);
 
   const handleReactionClick = async (emoji: string, hasUserReacted: boolean) => {
-    if (!user) return;
+    if (!user || !messageId) return;
 
     try {
       if (hasUserReacted) {
-        await removeMessageReaction(messageId, user.id, emoji);
+        if (onRemoveReaction) {
+          onRemoveReaction(emoji);
+        } else {
+          await removeMessageReaction(messageId, user.id, emoji);
+          loadReactions();
+        }
       } else {
         await addMessageReaction(messageId, user.id, emoji);
+        loadReactions();
       }
-      loadReactions();
     } catch (error) {
       console.error('Error handling reaction:', error);
     }
   };
 
   const handleEmojiSelect = async (emoji: string) => {
-    if (!user) return;
+    if (!user || !messageId) return;
     
     try {
       await addMessageReaction(messageId, user.id, emoji);
@@ -72,38 +94,40 @@ const MessageReactions: React.FC<MessageReactionsProps> = ({ messageId, classNam
     }
   };
 
-  if (Object.keys(groupedReactions).length === 0 && !showEmojiPicker) {
+  if (reactionArray.length === 0 && !showEmojiPicker) {
     return null;
   }
 
   return (
     <div className={`flex flex-wrap gap-1 mt-1 ${className}`}>
-      {Object.values(groupedReactions).map(({ emoji, count, hasUserReacted }) => (
+      {reactionArray.map(({ emoji, count, hasReacted }) => (
         <Button
           key={emoji}
-          variant={hasUserReacted ? "default" : "outline"}
+          variant={hasReacted ? "default" : "outline"}
           size="sm"
           className={`h-6 px-2 text-xs rounded-full ${
-            hasUserReacted 
+            hasReacted 
               ? 'bg-aura-purple/20 border-aura-purple text-aura-purple' 
               : 'bg-white/5 border-white/20 text-gray-300 hover:bg-white/10'
           }`}
-          onClick={() => handleReactionClick(emoji, hasUserReacted)}
+          onClick={() => handleReactionClick(emoji, hasReacted)}
         >
           <span className="mr-1">{emoji}</span>
           <span>{count}</span>
         </Button>
       ))}
       
-      <EmojiPicker onEmojiSelect={handleEmojiSelect}>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-6 w-6 p-0 rounded-full text-gray-400 hover:text-gray-200 hover:bg-white/10"
-        >
-          <Plus className="h-3 w-3" />
-        </Button>
-      </EmojiPicker>
+      {messageId && (
+        <EmojiPicker onEmojiSelect={handleEmojiSelect}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0 rounded-full text-gray-400 hover:text-gray-200 hover:bg-white/10"
+          >
+            <Plus className="h-3 w-3" />
+          </Button>
+        </EmojiPicker>
+      )}
     </div>
   );
 };

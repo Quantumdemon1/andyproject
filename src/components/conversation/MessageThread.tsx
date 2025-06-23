@@ -9,8 +9,8 @@ import { Button } from '@/components/ui/button';
 interface MessageThreadProps {
   parentMessage: Message;
   replies: Message[];
-  onSendReply: (content: string, attachmentUrl?: string) => void;
-  onDeleteMessage: (messageId: string) => void;
+  onSendReply: (content: string, attachmentUrl?: string) => Promise<void>;
+  onDeleteMessage: (messageId: string) => Promise<void>;
   onAddReaction: (messageId: string, emoji: string) => void;
   onRemoveReaction: (messageId: string, emoji: string) => void;
   currentUserId?: string;
@@ -28,9 +28,13 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [showReplyComposer, setShowReplyComposer] = useState(false);
 
-  const handleSendReply = (content: string, attachmentUrl?: string) => {
-    onSendReply(content, attachmentUrl);
+  const handleSendReply = async (content: string, attachmentUrl?: string) => {
+    await onSendReply(content, attachmentUrl);
     setShowReplyComposer(false);
+  };
+
+  const handleDeleteMessage = async (messageId: string) => {
+    await onDeleteMessage(messageId);
   };
 
   return (
@@ -58,9 +62,8 @@ const MessageThread: React.FC<MessageThreadProps> = ({
             <MessageItem
               key={reply.id}
               message={reply}
-              onDelete={onDeleteMessage}
-              onAddReaction={onAddReaction}
-              onRemoveReaction={onRemoveReaction}
+              onDelete={handleDeleteMessage}
+              onReply={undefined}
               currentUserId={currentUserId}
               isReply
             />

@@ -1,4 +1,3 @@
-
 export interface Message {
   id: string;
   content: string;
@@ -11,6 +10,8 @@ export interface Message {
   reply_to_message_id?: string;
   isMe?: boolean; // Computed locally
   updated_at: string;
+  username?: string; // Added for display purposes
+  avatar_url?: string; // Added for display purposes
 }
 
 export interface MessageReaction {

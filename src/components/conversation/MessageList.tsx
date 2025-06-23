@@ -5,15 +5,15 @@ import { Message } from "@/types/messaging";
 
 interface MessageListProps {
   messages: Message[];
-  onDelete: (messageId: string) => Promise<void>;
-  onReply?: (message: Message) => void;
+  onDeleteMessage: (messageId: string) => void;
+  onReplyToMessage?: (message: Message) => void;
   isMobile?: boolean;
 }
 
 const MessageList: React.FC<MessageListProps> = ({ 
   messages, 
-  onDelete, 
-  onReply,
+  onDeleteMessage, 
+  onReplyToMessage,
   isMobile = false 
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -46,8 +46,8 @@ const MessageList: React.FC<MessageListProps> = ({
             <MessageItem
               key={message.id}
               message={message}
-              onDelete={onDelete}
-              onReply={onReply}
+              onDelete={onDeleteMessage}
+              onReply={onReplyToMessage}
               showAvatar={showAvatar}
               isMobile={isMobile}
             />
