@@ -7,108 +7,76 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Shield, Users, FileImage, CreditCard, LineChart, Bell, User, Ban, CheckCircle } from "lucide-react";
+import { Search, Shield, Users, FileImage, CreditCard, LineChart, User, Ban, CheckCircle } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-
-interface UserData {
-  id: string;
-  username: string;
-  display_name: string;
-  avatar_url: string;
-  bio: string;
-  is_creator: boolean;
-  is_banned: boolean;
-}
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { 
+  fetchAllUsers, 
+  banUser, 
+  unbanUser, 
+  promoteToCreator, 
+  demoteFromCreator,
+  getAdminStats,
+  type AdminUserData
+} from "@/api/adminApi";
 
 const AdminPanel = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [users, setUsers] = useState<UserData[]>([]);
 
-  // Mock data for demonstration
-  React.useEffect(() => {
-    const mockUsers = [
-      {
-        id: "1",
-        username: "artmaster",
-        display_name: "Art Master",
-        avatar_url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
-        bio: "Digital artist specializing in surreal landscapes and futuristic designs.",
-        is_creator: true,
-        is_banned: false
-      },
-      {
-        id: "2",
-        username: "photoexplorers",
-        display_name: "Photo Explorers",
-        avatar_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
-        bio: "Capturing moments around the world. Travel photographer sharing unique perspectives.",
-        is_creator: true,
-        is_banned: false
-      },
-      {
-        id: "3",
-        username: "contentuser",
-        display_name: "Regular User",
-        avatar_url: "",
-        bio: "Just a regular user enjoying content.",
-        is_creator: false,
-        is_banned: false
-      },
-      {
-        id: "4",
-        username: "banneduser",
-        display_name: "Banned Account",
-        avatar_url: "",
-        bio: "This account has been banned for violating community guidelines.",
-        is_creator: false,
-        is_banned: true
+  // Fetch users data
+  const { data: users = [], isLoading: usersLoading } = useQuery({
+    queryKey: ['admin-users'],
+    queryFn: fetchAllUsers,
+  });
+
+  // Fetch admin stats
+  const { data: stats } = useQuery({
+    queryKey: ['admin-stats'],
+    queryFn: getAdminStats,
+  });
+
+  const handleUserAction = async (userId: string, action: 'ban' | 'unban' | 'promote' | 'demote') => {
+    const user = users.find(u => u.id === userId);
+    if (!user) return;
+
+    let success = false;
+    let actionDescription = '';
+
+    try {
+      switch (action) {
+        case 'ban':
+          success = await banUser(userId);
+          actionDescription = `${user.display_name || user.username} has been banned.`;
+          break;
+        case 'unban':
+          success = await unbanUser(userId);
+          actionDescription = `${user.display_name || user.username} has been unbanned.`;
+          break;
+        case 'promote':
+          success = await promoteToCreator(userId);
+          actionDescription = `${user.display_name || user.username} is now a creator.`;
+          break;
+        case 'demote':
+          success = await demoteFromCreator(userId);
+          actionDescription = `${user.display_name || user.username} is no longer a creator.`;
+          break;
       }
-    ];
 
-    setUsers(mockUsers);
-  }, []);
-
-  const handleUserAction = (userId: string, action: 'ban' | 'unban' | 'promote' | 'demote') => {
-    setUsers(prevUsers => 
-      prevUsers.map(user => {
-        if (user.id === userId) {
-          switch (action) {
-            case 'ban':
-              toast({
-                title: "User banned",
-                description: `${user.display_name} has been banned.`,
-              });
-              return { ...user, is_banned: true };
-            case 'unban':
-              toast({
-                title: "User unbanned",
-                description: `${user.display_name} has been unbanned.`,
-              });
-              return { ...user, is_banned: false };
-            case 'promote':
-              toast({
-                title: "User promoted",
-                description: `${user.display_name} is now a creator.`,
-              });
-              return { ...user, is_creator: true };
-            case 'demote':
-              toast({
-                title: "User demoted",
-                description: `${user.display_name} is no longer a creator.`,
-              });
-              return { ...user, is_creator: false };
-            default:
-              return user;
-          }
-        }
-        return user;
-      })
-    );
+      if (success) {
+        toast({
+          title: "Success",
+          description: actionDescription,
+        });
+        // Refetch users data
+        queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      }
+    } catch (error) {
+      console.error('Error performing user action:', error);
+    }
   };
 
   const filteredUsers = users.filter(user => {
@@ -116,8 +84,9 @@ const AdminPanel = () => {
     
     const query = searchQuery.toLowerCase();
     return (
-      user.username.toLowerCase().includes(query) ||
-      user.display_name.toLowerCase().includes(query)
+      user.username?.toLowerCase().includes(query) ||
+      user.display_name?.toLowerCase().includes(query) ||
+      user.email?.toLowerCase().includes(query)
     );
   });
 
@@ -136,6 +105,28 @@ const AdminPanel = () => {
               </div>
             </div>
           </CardHeader>
+          {stats && (
+            <CardContent className="pt-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-aura-blue">{stats.totalUsers}</div>
+                  <div className="text-sm text-gray-500">Total Users</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-aura-purple">{stats.totalPosts}</div>
+                  <div className="text-sm text-gray-500">Total Posts</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-500">{stats.totalNotifications}</div>
+                  <div className="text-sm text-gray-500">Notifications</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-orange-500">{users.filter(u => u.role === 'creator').length}</div>
+                  <div className="text-sm text-gray-500">Creators</div>
+                </div>
+              </div>
+            </CardContent>
+          )}
         </Card>
 
         <Tabs defaultValue="users" className="mb-8">
@@ -172,83 +163,97 @@ const AdminPanel = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {filteredUsers.length > 0 ? (
-                    filteredUsers.map(user => (
-                      <div key={user.id} className="flex items-center justify-between border-b border-gray-200 dark:border-gray-800 pb-4">
-                        <div className="flex items-center space-x-4">
-                          <Avatar>
-                            {user.avatar_url ? (
-                              <AvatarImage src={user.avatar_url} />
-                            ) : (
-                              <AvatarFallback>
-                                <User size={20} />
-                              </AvatarFallback>
-                            )}
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{user.display_name}</p>
-                            <p className="text-sm text-gray-500">@{user.username}</p>
-                            <div className="flex mt-1 space-x-2">
-                              {user.is_creator && (
-                                <Badge variant="outline" className="bg-aura-blue/20 text-aura-blue border-aura-blue">
-                                  Creator
-                                </Badge>
+                {usersLoading ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">Loading users...</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {filteredUsers.length > 0 ? (
+                      filteredUsers.map(user => (
+                        <div key={user.id} className="flex items-center justify-between border-b border-gray-200 dark:border-gray-800 pb-4">
+                          <div className="flex items-center space-x-4">
+                            <Avatar>
+                              {user.avatar_url ? (
+                                <AvatarImage src={user.avatar_url} />
+                              ) : (
+                                <AvatarFallback>
+                                  <User size={20} />
+                                </AvatarFallback>
                               )}
-                              {user.is_banned && (
-                                <Badge variant="outline" className="bg-red-500/20 text-red-500 border-red-500">
-                                  Banned
-                                </Badge>
-                              )}
+                            </Avatar>
+                            <div>
+                              <p className="font-medium">{user.display_name || user.username || 'Unknown User'}</p>
+                              <p className="text-sm text-gray-500">@{user.username || 'no-username'}</p>
+                              <div className="flex mt-1 space-x-2">
+                                {user.role === 'creator' && (
+                                  <Badge variant="outline" className="bg-aura-blue/20 text-aura-blue border-aura-blue">
+                                    Creator
+                                  </Badge>
+                                )}
+                                {user.role === 'admin' && (
+                                  <Badge variant="outline" className="bg-aura-purple/20 text-aura-purple border-aura-purple">
+                                    Admin
+                                  </Badge>
+                                )}
+                                {user.is_banned && (
+                                  <Badge variant="outline" className="bg-red-500/20 text-red-500 border-red-500">
+                                    Banned
+                                  </Badge>
+                                )}
+                                {user.is_online && (
+                                  <Badge variant="outline" className="bg-green-500/20 text-green-500 border-green-500">
+                                    Online
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
                           </div>
+                          <div className="flex items-center space-x-2">
+                            {user.is_banned ? (
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleUserAction(user.id, 'unban')}
+                              >
+                                <CheckCircle size={16} className="mr-1" /> Unban
+                              </Button>
+                            ) : (
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="text-red-500 border-red-500 hover:bg-red-500/10"
+                                onClick={() => handleUserAction(user.id, 'ban')}
+                              >
+                                <Ban size={16} className="mr-1" /> Ban
+                              </Button>
+                            )}
+                            
+                            {user.role === 'creator' ? (
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleUserAction(user.id, 'demote')}
+                              >
+                                Revoke Creator
+                              </Button>
+                            ) : user.role !== 'admin' && (
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleUserAction(user.id, 'promote')}
+                              >
+                                Make Creator
+                              </Button>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          {user.is_banned ? (
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleUserAction(user.id, 'unban')}
-                            >
-                              <CheckCircle size={16} className="mr-1" /> Unban
-                            </Button>
-                          ) : (
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="text-red-500 border-red-500 hover:bg-red-500/10"
-                              onClick={() => handleUserAction(user.id, 'ban')}
-                            >
-                              <Ban size={16} className="mr-1" /> Ban
-                            </Button>
-                          )}
-                          
-                          {user.is_creator ? (
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleUserAction(user.id, 'demote')}
-                            >
-                              Revoke Creator
-                            </Button>
-                          ) : (
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleUserAction(user.id, 'promote')}
-                            >
-                              Make Creator
-                            </Button>
-                          )}
-                          
-                          <Button variant="outline" size="sm">View Details</Button>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-center py-4 text-gray-500">No users found</p>
-                  )}
-                </div>
+                      ))
+                    ) : (
+                      <p className="text-center py-4 text-gray-500">No users found</p>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
