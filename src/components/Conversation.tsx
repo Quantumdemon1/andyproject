@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import MessageList from '@/components/conversation/MessageList';
-import EnhancedMessageComposer from '@/components/conversation/EnhancedMessageComposer';
+import MessageComposer from '@/components/conversation/MessageComposer';
 import TypingIndicator from '@/components/conversation/TypingIndicator';
 import { useTypingIndicator } from '@/hooks/useTypingIndicator';
 
@@ -28,7 +28,7 @@ const Conversation: React.FC<ConversationProps> = ({
   isMobile = false,
   onBack
 }) => {
-  const [replyToMessage, setReplyToMessage] = useState<{ id: string; content: string; username: string } | null>(null);
+  const [replyToMessage, setReplyToMessage] = useState<{ id: string; content: string; sender_name: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { typingUsers } = useTypingIndicator(currentChat?.id || '');
 
@@ -40,8 +40,8 @@ const Conversation: React.FC<ConversationProps> = ({
     scrollToBottom();
   }, [messages, typingUsers]);
 
-  const handleSendMessage = (content: string, attachmentUrl?: string, replyToMessageId?: string) => {
-    sendMessage(content, attachmentUrl, replyToMessageId);
+  const handleSendMessage = async (content: string, attachmentUrl?: string, replyToMessageId?: string) => {
+    await sendMessage(content, attachmentUrl, replyToMessageId);
     setReplyToMessage(null);
   };
 
@@ -49,7 +49,7 @@ const Conversation: React.FC<ConversationProps> = ({
     setReplyToMessage({
       id: message.id,
       content: message.content || '',
-      username: message.username || message.sender_id || 'Unknown User'
+      sender_name: message.username || message.sender_id || 'Unknown User'
     });
   };
 
@@ -137,6 +137,8 @@ const Conversation: React.FC<ConversationProps> = ({
           messages={messages}
           onDelete={handleDeleteMessage}
           onReplyToMessage={handleReply}
+          conversationId={currentChat.id}
+          isMobile={isMobile}
         />
         
         <TypingIndicator typingUsers={typingUsers} />
@@ -145,11 +147,12 @@ const Conversation: React.FC<ConversationProps> = ({
       </div>
 
       {/* Message Composer */}
-      <EnhancedMessageComposer
+      <MessageComposer
         onSendMessage={handleSendMessage}
-        conversationId={currentChat.id}
         replyToMessage={replyToMessage}
         onCancelReply={() => setReplyToMessage(null)}
+        conversationId={currentChat.id}
+        isMobile={isMobile}
       />
     </div>
   );

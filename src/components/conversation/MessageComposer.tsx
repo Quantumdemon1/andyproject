@@ -1,11 +1,12 @@
 
-import React, { useState } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import { Paperclip, SmilePlus, Send, Loader2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import EmojiPicker from "@/components/EmojiPicker";
 import FileUpload from "@/components/FileUpload";
 import AttachmentPreview from "./AttachmentPreview";
+import { useTypingIndicator } from "@/hooks/useTypingIndicator";
 
 interface MessageComposerProps {
   onSendMessage: (content: string, attachmentUrl?: string, replyToId?: string, threadId?: string) => Promise<void>;
@@ -15,6 +16,7 @@ interface MessageComposerProps {
   isMobile?: boolean;
   placeholder?: string;
   compact?: boolean;
+  conversationId: string;
 }
 
 const MessageComposer: React.FC<MessageComposerProps> = ({ 
@@ -24,17 +26,23 @@ const MessageComposer: React.FC<MessageComposerProps> = ({
   threadId,
   isMobile = false,
   placeholder = "Type a message...",
-  compact = false
+  compact = false,
+  conversationId
 }) => {
   const [newMessage, setNewMessage] = useState("");
   const [attachmentUrl, setAttachmentUrl] = useState<string | undefined>();
   const [isSending, setIsSending] = useState(false);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const { startTyping, stopTyping } = useTypingIndicator(conversationId);
 
   const handleSendMessage = async () => {
     if (newMessage.trim() === "" && !attachmentUrl) return;
     
     try {
       setIsSending(true);
+      stopTyping(); // Stop typing indicator when sending
+      
       await onSendMessage(
         newMessage, 
         attachmentUrl, 
@@ -51,6 +59,30 @@ const MessageComposer: React.FC<MessageComposerProps> = ({
     }
   };
 
+  const handleInputChange = useCallback((value: string) => {
+    setNewMessage(value);
+    
+    // Handle typing indicator
+    if (value.trim().length > 0) {
+      startTyping();
+      
+      // Clear existing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      
+      // Stop typing after 3 seconds of no input
+      typingTimeoutRef.current = setTimeout(() => {
+        stopTyping();
+      }, 3000);
+    } else {
+      stopTyping();
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    }
+  }, [startTyping, stopTyping]);
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -59,12 +91,23 @@ const MessageComposer: React.FC<MessageComposerProps> = ({
   };
 
   const handleEmojiSelect = (emoji: string) => {
-    setNewMessage(prev => prev + emoji);
+    const newValue = newMessage + emoji;
+    handleInputChange(newValue);
   };
 
   const handleFileUploadComplete = (url: string) => {
     setAttachmentUrl(url);
   };
+
+  // Stop typing when component unmounts
+  React.useEffect(() => {
+    return () => {
+      stopTyping();
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, [stopTyping]);
 
   return (
     <div className={`${isMobile ? 'p-3' : 'p-4'} border-t border-white/10 bg-white/5`}>
@@ -112,7 +155,7 @@ const MessageComposer: React.FC<MessageComposerProps> = ({
             placeholder={replyToMessage ? "Type a reply..." : placeholder}
             className="flex-1 bg-white/10 border-white/10 focus-visible:ring-aura-purple resize-none h-10 leading-tight pt-2"
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
+            onChange={(e) => handleInputChange(e.target.value)}
             onKeyDown={handleKeyDown}
             rows={1}
             disabled={isSending}
