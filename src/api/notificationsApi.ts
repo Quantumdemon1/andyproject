@@ -27,7 +27,9 @@ export async function fetchNotifications(): Promise<Notification[]> {
       .limit(50);
 
     if (error) throw error;
-    return data || [];
+    
+    // Type assertion to ensure the data matches our interface
+    return (data || []) as Notification[];
   } catch (error) {
     console.error('Error fetching notifications:', error);
     toast({
