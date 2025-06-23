@@ -25,7 +25,7 @@ export async function fetchPosts(): Promise<Post[]> {
       .from('posts')
       .select(`
         *,
-        user_profiles!posts_user_id_fkey (
+        user_profiles (
           username,
           avatar_url,
           display_name
@@ -74,7 +74,7 @@ export async function createPost(content: string, imageUrl?: string, videoUrl?: 
       })
       .select(`
         *,
-        user_profiles!posts_user_id_fkey (
+        user_profiles (
           username,
           avatar_url,
           display_name
