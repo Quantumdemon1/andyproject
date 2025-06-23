@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { cleanupAuthState } from "@/utils/authUtils";
 
 const Login = () => {
   const [isSignup, setIsSignup] = useState(false);
@@ -17,6 +18,16 @@ const Login = () => {
   const handleLogin = async (data: { email: string; password: string }) => {
     setIsSubmitting(true);
     try {
+      // Clean up any existing auth state
+      cleanupAuthState();
+      
+      // Attempt global sign out first
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        // Continue even if this fails
+      }
+
       const { error } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
@@ -29,7 +40,8 @@ const Login = () => {
         description: "Logged in successfully",
       });
 
-      navigate("/");
+      // Force page reload for clean state
+      window.location.href = "/home";
     } catch (error: any) {
       toast({
         title: "Error",
@@ -44,13 +56,17 @@ const Login = () => {
   const handleSignup = async (data: { email: string; password: string; username: string }) => {
     setIsSubmitting(true);
     try {
+      // Clean up any existing auth state
+      cleanupAuthState();
+
       const { error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
           data: {
             username: data.username,
-          }
+          },
+          emailRedirectTo: window.location.origin + '/home'
         }
       });
 
@@ -72,32 +88,34 @@ const Login = () => {
   };
 
   const handleTestLogin = async (role: 'admin' | 'user') => {
-    if (role === 'user') {
-      // Set direct access flag in session storage
-      sessionStorage.setItem('direct_access', 'true');
-      
-      toast({
-        title: "Login successful",
-        description: "You are now logged in as user",
-        variant: "default"
-      });
-      
-      // Force navigation to home page with a full page reload
-      window.location.href = '/home';
-      return;
-    }
-
-    // For admin, try the standard authentication
-    const email = 'admin@example.com';
-    const password = 'password123';
+    setIsSubmitting(true);
     
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      // Clean up existing state
+      cleanupAuthState();
+      
+      // Attempt global sign out
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        // Continue even if this fails
+      }
 
-      if (error) throw error;
+      if (role === 'admin') {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: 'admin@example.com',
+          password: 'password123',
+        });
+
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: 'user@example.com',
+          password: 'password123',
+        });
+
+        if (error) throw error;
+      }
 
       toast({
         title: "Login successful",
@@ -105,13 +123,16 @@ const Login = () => {
         variant: "default"
       });
 
-      navigate("/");
+      // Force page reload for clean state
+      window.location.href = '/home';
     } catch (error: any) {
       toast({
         title: "Login failed",
         description: error.message || "Failed to log in with test account",
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

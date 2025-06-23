@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { determineUserRole, isDirectAccessEnabled } from "@/utils/authUtils";
+import { determineUserRole } from "@/utils/authUtils";
 
 /**
  * Hook to manage authentication state
@@ -16,12 +16,6 @@ export const useAuthState = () => {
   // User presence update function
   const updateUserPresence = useCallback(async (isOnline: boolean) => {
     if (!user) return;
-
-    // Skip DB updates in direct access mode
-    if (isDirectAccessEnabled() || user.id === 'direct-access-user') {
-      console.log("Direct access mode: skipping presence update");
-      return;
-    }
 
     try {
       const { error } = await supabase
@@ -41,25 +35,9 @@ export const useAuthState = () => {
   }, [user]);
 
   useEffect(() => {
-    console.log("Auth state changed:", session?.user?.email);
+    console.log("Setting up auth state listener");
     
-    // Check for direct access mode first
-    if (isDirectAccessEnabled()) {
-      console.log("Direct access mode detected, setting user as regular user");
-      // Create a mock user for direct access mode
-      const mockUser = {
-        id: 'direct-access-user',
-        email: 'user@example.com',
-        role: 'user'
-      } as unknown as User;
-      
-      setUser(mockUser);
-      setUserRole('user');
-      setLoading(false);
-      return;
-    }
-    
-    // Set up auth state listener for normal auth flow
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log("Auth state changed:", event, session?.user?.email);
@@ -69,15 +47,16 @@ export const useAuthState = () => {
         
         // Update user presence when auth state changes
         if (session?.user) {
-          // Use setTimeout to avoid recursive calls
           setTimeout(() => {
             updateUserPresence(true);
           }, 0);
         }
+        
+        setLoading(false);
       }
     );
 
-    // THEN check for existing session
+    // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log("Initial session check:", session?.user?.email);
       setSession(session);
@@ -99,10 +78,7 @@ export const useAuthState = () => {
 
   // Set up visibility change handlers
   useEffect(() => {
-    // Skip in direct access mode
-    if (isDirectAccessEnabled() || !user || user.id === 'direct-access-user') {
-      return;
-    }
+    if (!user) return;
     
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible" && user) {

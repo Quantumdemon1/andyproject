@@ -24,36 +24,6 @@ export const determineUserRole = (email?: string): 'admin' | 'user' | null => {
 };
 
 /**
- * Check if direct access is enabled (development only)
- * This will be disabled in production builds
- */
-export const isDirectAccessEnabled = (): boolean => {
-  // Only allow direct access in development mode
-  if (import.meta.env.PROD) {
-    return false;
-  }
-  
-  // Check for direct access flag in development
-  return import.meta.env.DEV && sessionStorage.getItem('directAccess') === 'true';
-};
-
-/**
- * Enable direct access (development only)
- */
-export const enableDirectAccess = (): void => {
-  if (import.meta.env.DEV) {
-    sessionStorage.setItem('directAccess', 'true');
-  }
-};
-
-/**
- * Disable direct access
- */
-export const disableDirectAccess = (): void => {
-  sessionStorage.removeItem('directAccess');
-};
-
-/**
  * Check if user has required role
  */
 export const hasRequiredRole = (user: User | null, requiredRole?: 'admin' | 'user'): boolean => {
@@ -67,4 +37,23 @@ export const hasRequiredRole = (user: User | null, requiredRole?: 'admin' | 'use
   }
   
   return userRole === 'admin' || userRole === 'user';
+};
+
+/**
+ * Clean up authentication state
+ */
+export const cleanupAuthState = (): void => {
+  // Remove all Supabase auth keys from localStorage
+  Object.keys(localStorage).forEach((key) => {
+    if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+      localStorage.removeItem(key);
+    }
+  });
+  
+  // Remove from sessionStorage as well
+  Object.keys(sessionStorage || {}).forEach((key) => {
+    if (key.startsWith('supabase.auth.') || key.includes('sb-') || key === 'direct_access') {
+      sessionStorage.removeItem(key);
+    }
+  });
 };

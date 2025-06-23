@@ -4,7 +4,7 @@ import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { useAuthState } from "@/hooks/useAuthState";
-import { determineUserRole, AuthResult, SignUpResult } from "@/utils/authUtils";
+import { determineUserRole, AuthResult, SignUpResult, cleanupAuthState } from "@/utils/authUtils";
 
 interface AuthContextType {
   session: Session | null;
@@ -29,6 +29,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const signIn = async (email: string, password: string): Promise<AuthResult<Session>> => {
     try {
       console.log("Signing in with:", email);
+      
+      // Clean up existing state
+      cleanupAuthState();
+      
+      // Attempt global sign out first
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        // Continue even if this fails
+      }
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -67,6 +78,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const signUp = async (email: string, password: string, username?: string): Promise<AuthResult<SignUpResult>> => {
     try {
       console.log("Signing up with:", email);
+      
+      // Clean up existing state
+      cleanupAuthState();
       
       // Add metadata for the user profile
       const metadata = username ? { username } : {}; 
@@ -126,12 +140,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       await updateUserPresence(false);
     }
     
-    await supabase.auth.signOut();
+    // Clean up auth state
+    cleanupAuthState();
+    
+    try {
+      await supabase.auth.signOut({ scope: 'global' });
+    } catch (err) {
+      // Ignore errors
+    }
     
     toast({
       title: "Signed out",
       description: "You've been signed out successfully.",
     });
+    
+    // Force page reload for clean state
+    window.location.href = '/login';
   };
 
   return (

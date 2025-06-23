@@ -2,7 +2,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { ReactNode } from "react";
-import { hasRequiredRole, isDirectAccessEnabled } from "@/utils/authUtils";
+import { hasRequiredRole } from "@/utils/authUtils";
 
 interface PrivateRouteProps {
   children: ReactNode;
@@ -18,12 +18,6 @@ const PrivateRoute = ({ children, requiredRole }: PrivateRouteProps) => {
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
       </div>
     );
-  }
-
-  // Allow direct access only in development mode
-  if (isDirectAccessEnabled()) {
-    console.log("Direct access enabled - bypassing authentication");
-    return <>{children}</>;
   }
 
   // Check authentication
