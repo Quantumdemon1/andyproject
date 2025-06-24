@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Upload, 
+  Plus, 
   X, 
   File, 
   Image, 
@@ -248,19 +248,19 @@ const EnhancedFileUpload: React.FC<EnhancedFileUploadProps> = ({
             `}
           >
             <input {...getInputProps()} />
-            <Upload className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+            <Plus className="h-8 w-8 mx-auto mb-4 text-gray-400" />
             {isDragActive ? (
               <p className="text-aura-blue font-medium">Drop files here...</p>
             ) : (
               <div>
                 <p className="text-white font-medium mb-2">
-                  Click to upload or drag and drop
+                  Add files
                 </p>
                 <p className="text-gray-400 text-sm">
-                  Images, videos, audio, PDFs up to {formatFileSize(maxSizePerFile)}
+                  Click or drag to upload
                 </p>
                 <p className="text-gray-400 text-xs mt-1">
-                  Maximum {maxFiles} files
+                  Max {formatFileSize(maxSizePerFile)} • {maxFiles} files max
                 </p>
               </div>
             )}
